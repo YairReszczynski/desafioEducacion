@@ -1,0 +1,70 @@
+{
+  "fuente": "Datos Abiertos Mineduc / SIES - Matrícula Educación Superior 2025 (MRUN anonimizado)",
+  "archivo_origen": "20260810_Matrícula_Ed_Superior_2025_PUBL_MRUN.csv",
+  "url": "https://datosabiertos.mineduc.cl/matricula-en-educacion-superior/",
+  "n_filas_base_completa_2025": 1454252,
+  "n_estudiantes_primer_anio_pregrado_2025": 420276,
+  "por_tipo_inst": {
+    "Universidades": 189565,
+    "Institutos Profesionales": 160642,
+    "Centros de Formación Técnica": 70069
+  },
+  "por_jornada": {
+    "Diurna": 261470,
+    "Vespertina": 80285,
+    "A Distancia": 70640,
+    "Semipresencial": 7616,
+    "Otra": 265
+  },
+  "por_modalidad": {
+    "Presencial": 341087,
+    "No Presencial": 70640,
+    "Semipresencial": 8549
+  },
+  "por_genero": {
+    "2": 218342,
+    "1": 201934
+  },
+  "por_rango_edad": {
+    "15 a 19 años": 168875,
+    "20 a 24 años": 110775,
+    "25 a 29 años": 44443,
+    "40 y más años": 35282,
+    "30 a 34 años": 34324,
+    "35 a 39 años": 26577
+  },
+  "por_region_top15": {
+    "Metropolitana": 214949,
+    "Valparaíso": 40418,
+    "Biobío": 37834,
+    "Maule": 19286,
+    "La Araucanía": 17779,
+    "Coquimbo": 15002,
+    "Los Lagos": 14684,
+    "Antofagasta": 12400,
+    "Lib. Gral. B. O'Higgins": 11024,
+    "Los Ríos": 8181,
+    "Tarapacá": 7359,
+    "Ñuble": 7253,
+    "Arica y Parinacota": 5505,
+    "Atacama": 4556,
+    "Magallanes": 2769
+  },
+  "top_instituciones_primer_anio": {
+    "IP DUOC UC": 38752,
+    "IP AIEP": 29501,
+    "CFT INACAP": 27216,
+    "IP INACAP": 21576,
+    "IP LATINOAMERICANO DE COMERCIO EXTERIOR - IPLACEX": 18978,
+    "UNIVERSIDAD ANDRES BELLO": 16902,
+    "CFT SANTO TOMAS": 16067,
+    "UNIVERSIDAD SAN SEBASTIAN": 12885,
+    "IP IACC": 11032,
+    "IP SANTO TOMAS": 10959,
+    "UNIVERSIDAD DE LAS AMERICAS": 9266,
+    "IP DE CHILE": 8159,
+    "UNIVERSIDAD DE CHILE": 8057,
+    "UNIVERSIDAD AUTONOMA DE CHILE": 7679,
+    "PONTIFICIA UNIVERSIDAD CATOLICA DE CHILE": 7287
+  }
+}

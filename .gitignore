@@ -1,0 +1,14 @@
+# Datos crudos pesados (se re-descargan desde fuentes oficiales; ver data/FUENTES.md)
+data/raw/**/*.rar
+data/raw/**/*.zip
+data/raw/matricula_extracted/
+data/processed/matricula_primer_anio_pregrado_2025_sies.csv
+
+# Mantener el gzip más liviano y los agregados
+!data/processed/matricula_primer_anio_pregrado_2025_sies.csv.gz
+
+.DS_Store
+__pycache__/
+.venv/
+*.pyc
+~$*.xlsx
