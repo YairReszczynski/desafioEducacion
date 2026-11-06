@@ -35,7 +35,7 @@ export default function QrPage() {
       <div className="panel flex flex-col items-center p-6 text-center">
         <PuenteLogo variant="color" className="!h-12" />
         <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-coral">
-          Escaneá y probá
+          Escanea y prueba
         </p>
         <h1 className="display mt-2 text-3xl font-bold">Puente Semanal</h1>
         <p className="mt-2 max-w-sm text-sm text-muted">

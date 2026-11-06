@@ -43,9 +43,13 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [transcript, setTranscript] = useState("");
-  const [pillars, setPillars] = useState(student.pillars);
+  const [pillars, setPillars] = useState({
+    academico: 5,
+    psicologico: 5,
+    trabajo: 5,
+  });
   const [minutes, setMinutes] = useState(85);
-  const [energy, setEnergy] = useState(4);
+  const [energy, setEnergy] = useState(5);
   const [glass, setGlass] = useState<GlassBoxSummary | null>(null);
   const [plan, setPlan] = useState<SurvivalPlan | null>(null);
   const [loading, setLoading] = useState(false);
@@ -224,6 +228,7 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
           pillars,
           minutes,
           energy,
+          recordHistory: !published,
         });
         setPublished(true);
       }
@@ -753,6 +758,7 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
                           minutes,
                           energy,
                           requestedSupport: a,
+                          recordHistory: true,
                         });
                         setPublished(true);
                       }
@@ -795,8 +801,9 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
                 ) : null}
                 <p className="mt-2 text-sm text-muted">
                   Autorizaste compartir: Coordinación ya ve tu caso con el nivel
-                  de prioridad que salió de este check-in. Tú sigues en tu plan;
-                  ellos deciden el contacto humano.
+                  de prioridad que salió de este check-in. Cada check-in queda
+                  en el historial del alumno para ver la evolución semana a
+                  semana. Tú sigues en tu plan; ellos deciden el contacto humano.
                 </p>
                 <p className="mt-3 border border-line bg-paper p-3 text-sm">
                   {plan.tutorNoteDraft}
@@ -826,6 +833,8 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
               onClick={() => {
                 stopRecording();
                 setRequestedSupport(null);
+                setPillars({ academico: 5, psicologico: 5, trabajo: 5 });
+                setEnergy(5);
                 setStep("welcome");
               }}
             >

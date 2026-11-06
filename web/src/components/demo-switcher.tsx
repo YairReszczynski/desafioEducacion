@@ -33,6 +33,12 @@ const VIEWS = [
     group: "equipo" as const,
   },
   {
+    href: "/dashboard/historial",
+    label: "Historial",
+    hint: "Por alumno",
+    group: "equipo" as const,
+  },
+  {
     href: "/dashboard/digitize",
     label: "Pauta papel",
     hint: "Tutores",
@@ -86,8 +92,11 @@ export function DemoSwitcher() {
             pathname === v.href ||
             (v.href.startsWith("/p/") && pathname.startsWith("/p/")) ||
             (v.href === "/dashboard" &&
-              pathname.startsWith("/dashboard") &&
-              !pathname.includes("digitize"));
+              pathname === "/dashboard") ||
+            (v.href === "/dashboard/historial" &&
+              pathname.startsWith("/dashboard/historial")) ||
+            (v.href === "/dashboard/digitize" &&
+              pathname.includes("digitize"));
           const prev = VIEWS[idx - 1];
           const showGroup =
             v.group !== "nav" && (!prev || prev.group !== v.group);

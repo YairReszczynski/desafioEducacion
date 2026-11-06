@@ -14,6 +14,7 @@ import {
   mergeStudentsWithLive,
   type LiveCheckIn,
 } from "@/lib/checkin-store";
+import { getHistoryForToken } from "@/lib/history-store";
 import { clearAllInvited } from "@/lib/invite-store";
 import {
   getDashboardStats,
@@ -24,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
+  History,
   MessageCircleWarning,
   Phone,
   Radio,
@@ -31,6 +33,7 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
@@ -133,6 +136,7 @@ export function DashboardRadar({ students: seed }: { students: Student[] }) {
   const liveDetail = selected
     ? getLatestLiveForToken(selected.token)
     : undefined;
+  const history = selected ? getHistoryForToken(selected.token) : [];
 
   const visible = queue.filter((s) => {
     if (filter === "live") return hasLiveCheckIn(s.token) || isLiveStudentId(s.id);
@@ -438,6 +442,61 @@ export function DashboardRadar({ students: seed }: { students: Student[] }) {
                 </p>
               </div>
             ) : null}
+
+            {history.length ? (
+              <div className="mt-4 border border-line bg-paper/80 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-coral">
+                    <History size={14} /> Historial ({history.length})
+                  </p>
+                  <Link
+                    href="/dashboard/historial"
+                    className="text-[11px] font-bold text-puente underline"
+                  >
+                    Ver dashboard completo
+                  </Link>
+                </div>
+                <p className="mt-1 text-xs text-muted">
+                  Cada check-in de ~30 s autorizado queda guardado. Así la
+                  fundación ve la evolución, no solo el último mensaje.
+                </p>
+                <ul className="mt-3 space-y-2">
+                  {history.slice(0, 4).map((h, i) => (
+                    <li
+                      key={h.id}
+                      className="border border-line bg-white p-2 text-xs"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        {i === 0 ? (
+                          <span className="bg-puente px-1 text-[9px] font-bold uppercase text-white">
+                            Ahora
+                          </span>
+                        ) : null}
+                        <AlertBadge level={h.alertLevel} />
+                        <span className="text-muted">
+                          {new Date(h.at).toLocaleDateString("es-CL", {
+                            day: "2-digit",
+                            month: "short",
+                          })}
+                        </span>
+                      </div>
+                      <p className="mt-1 line-clamp-2 italic text-ink/80">
+                        “{h.transcript}”
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="mt-4 border border-dashed border-line p-3 text-xs text-muted">
+                Aún no hay historial de check-ins para esta ficha. Cuando el
+                alumno comparta un check-in, aparecerá aquí y en{" "}
+                <Link href="/dashboard/historial" className="underline">
+                  Historial
+                </Link>
+                .
+              </div>
+            )}
 
             <div className="mt-4 space-y-3 border border-line bg-paper/70 p-3 text-sm">
               <p className="flex items-center gap-2 font-bold">

@@ -53,7 +53,7 @@ export function createInvitedStudent(draft: InviteDraft): Student {
     city: "Santiago",
     alertLevel: "baja",
     signals: [],
-    pillars: { academico: 6, psicologico: 6, trabajo: draft.works ? 4 : 8 },
+    pillars: { academico: 5, psicologico: 5, trabajo: 5 },
     lastCheckInDaysAgo: null,
     missedMeetings: 0,
     unansweredMessages: 0,

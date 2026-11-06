@@ -98,29 +98,39 @@ export function DigitizePanel() {
       });
     } catch {
       setCamError(
-        "No se pudo abrir la cámara. Usá “Subir foto / cámara del teléfono”."
+        "No se pudo abrir la cámara. Usa “Subir foto” o la cámara del teléfono."
       );
       setCamOn(false);
     }
   }
 
   async function addShotFromDataUrl(raw: string, label: string) {
-    const { dataUrl, mediaType } = await compressDataUrl(raw, {
-      maxWidth: 1600,
-      quality: 0.74,
-    });
-    setShots((prev) => {
-      const next = [...prev, { dataUrl, mediaType, label }];
-      return next.slice(0, 3);
-    });
-    setResult(null);
-    setPublished(false);
+    try {
+      const { dataUrl, mediaType } = await compressDataUrl(raw, {
+        maxWidth: 1600,
+        quality: 0.74,
+      });
+      setShots((prev) => {
+        const next = [...prev, { dataUrl, mediaType, label }];
+        return next.slice(0, 3);
+      });
+      setResult(null);
+      setPublished(false);
+      setCamError(null);
+      setWarning(null);
+    } catch (e) {
+      setCamError(
+        e instanceof Error
+          ? e.message
+          : "No se pudo cargar la imagen. Prueba JPG o PNG."
+      );
+    }
   }
 
   async function captureFrame() {
     const video = videoRef.current;
     if (!video || !video.videoWidth) {
-      setCamError("Esperá un segundo a que la cámara enfoque y reintentá.");
+      setCamError("Espera un segundo a que la cámara enfoque e inténtalo de nuevo.");
       return;
     }
     const canvas = document.createElement("canvas");
@@ -135,10 +145,25 @@ export function DigitizePanel() {
 
   async function onFiles(files: FileList | null) {
     if (!files?.length) return;
-    const list = Array.from(files).slice(0, 3 - shots.length);
-    for (const file of list) {
-      const raw = await fileToDataUrl(file);
-      await addShotFromDataUrl(raw, file.name || `Foto ${shots.length + 1}`);
+    setCamError(null);
+    const list = Array.from(files).slice(0, Math.max(0, 3 - shots.length));
+    if (!list.length) {
+      setCamError("Ya tienes 3 fotos. Quita una para agregar otra.");
+      return;
+    }
+    for (let i = 0; i < list.length; i++) {
+      const file = list[i]!;
+      try {
+        const raw = await fileToDataUrl(file);
+        await addShotFromDataUrl(
+          raw,
+          file.name?.trim() || `Foto ${shots.length + i + 1}`
+        );
+      } catch {
+        setCamError(
+          `No se pudo leer “${file.name || "la imagen"}”. Usa JPG o PNG.`
+        );
+      }
     }
   }
 
@@ -187,7 +212,7 @@ export function DigitizePanel() {
     } catch (e) {
       const msg =
         e instanceof Error && e.name === "AbortError"
-          ? "Tardó demasiado. Reintentá con una foto más nítida o usa el PDF relleno + notas."
+          ? "Tardó demasiado. Inténtalo de nuevo con una foto más nítida o usa el PDF relleno + notas."
           : e instanceof Error
             ? e.message
             : "Error";
@@ -258,6 +283,7 @@ export function DigitizePanel() {
       glass,
       pillars: result.pillars,
       requestedSupport: null,
+      source: "papel",
     });
     setPublished(true);
   }
@@ -376,15 +402,36 @@ export function DigitizePanel() {
                 disabled={shots.length >= 3}
               >
                 <Upload size={16} />
-                Subir foto / cámara del teléfono
+                Subir foto
               </button>
+              <label
+                htmlFor="pauta-cam-capture"
+                className={cn(
+                  "btn btn-ghost cursor-pointer",
+                  shots.length >= 3 && "pointer-events-none opacity-45"
+                )}
+              >
+                <Camera size={16} />
+                Cámara del teléfono
+              </label>
               <input
                 ref={fileRef}
                 type="file"
-                accept="image/*"
-                capture="environment"
+                accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp"
                 multiple
                 className="hidden"
+                onChange={(e) => {
+                  void onFiles(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+              {/* Input aparte solo cámara (móvil) */}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                id="pauta-cam-capture"
                 onChange={(e) => {
                   void onFiles(e.target.files);
                   e.target.value = "";

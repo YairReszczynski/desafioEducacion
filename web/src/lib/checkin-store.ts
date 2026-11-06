@@ -1,3 +1,7 @@
+import {
+  appendHistoryEntry,
+  patchLatestHistorySupport,
+} from "@/lib/history-store";
 import { findInvitedByToken, loadInvited, saveInvited } from "@/lib/invite-store";
 import type {
   AlertLevel,
@@ -91,6 +95,9 @@ export function publishLiveCheckIn(input: {
   minutes?: number;
   energy?: number;
   requestedSupport?: string | null;
+  source?: "checkin" | "papel";
+  /** Si false, actualiza el vivo sin agregar otra fila al historial. */
+  recordHistory?: boolean;
 }): LiveCheckIn {
   const alertLevel = (input.glass.alertLevel || "media") as AlertLevel;
   const signals = mapSignals(input.glass);
@@ -146,6 +153,22 @@ export function publishLiveCheckIn(input: {
 
   const prev = loadLiveCheckIns().filter((c) => c.token !== patched.token);
   saveLiveCheckIns([entry, ...prev]);
+
+  // Historial acumulativo (una fila por check-in autorizado, no por recompilar plan)
+  if (input.recordHistory !== false) {
+    appendHistoryEntry({
+      token: patched.token,
+      student: patched,
+      transcript: input.transcript,
+      glass: input.glass,
+      pillars: input.pillars,
+      minutes: input.minutes,
+      energy: input.energy,
+      requestedSupport: entry.requestedSupport,
+      source: input.source || "checkin",
+    });
+  }
+
   bumpLiveEvent(entry);
   return entry;
 }
@@ -179,6 +202,7 @@ export function setLiveRequestedSupport(
   };
   list[idx] = entry;
   saveLiveCheckIns(list);
+  patchLatestHistorySupport(token, support);
 
   const invited = loadInvited();
   const iIdx = invited.findIndex((s) => s.token === token);
