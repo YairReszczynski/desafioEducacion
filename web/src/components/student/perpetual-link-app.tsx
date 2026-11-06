@@ -496,7 +496,7 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="text-xs font-bold uppercase tracking-wide text-muted">
-                    Minutos libres para estudiar
+                    Tiempo libre para estudiar
                   </label>
                   <input
                     type="range"
@@ -508,7 +508,20 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
                     className="mt-2 w-full accent-[#e7ce4f]"
                   />
                   <p className="display text-lg font-bold">
-                    {minutes} min totales
+                    {minutes <= 60
+                      ? `${minutes} min`
+                      : (() => {
+                          const h = Math.floor(minutes / 60);
+                          const m = minutes % 60;
+                          return m === 0
+                            ? `${h} h`
+                            : `${h} h ${m} min`;
+                        })()}
+                  </p>
+                  <p className="text-[11px] text-muted">
+                    {minutes <= 60
+                      ? "En minutos"
+                      : `≈ ${minutes} min totales`}
                   </p>
                 </div>
                 <div>

@@ -204,3 +204,25 @@ body {
   border: 2px solid white;
   box-shadow: 0 1px 4px rgba(28, 27, 26, 0.35);
 }
+
+@media print {
+  body {
+    background: white !important;
+  }
+
+  .demo-switcher,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .pauta-sheet {
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+}
