@@ -14,7 +14,7 @@ export default function HomePage() {
           La educación supera la pobreza
         </h1>
         <p className="mt-4 text-base leading-relaxed text-muted">
-          Probá el link del alumno: voz o texto, termómetro de 3 pilares, Caja
+          Prueba el link del alumno: voz o texto, termómetro de 3 pilares, Caja
           de Cristal y plan de estudio en minutos reales. Sin app store, sin
           contraseña.
         </p>
@@ -26,29 +26,26 @@ export default function HomePage() {
           >
             Probar como alumno
           </Link>
-          <Link
-            href="/probar?rol=tutor"
-            className="btn btn-accent min-h-12 w-full"
-          >
+          <Link href="/ver" className="btn btn-accent min-h-12 w-full">
             Ver cómo llega al tutor
           </Link>
         </div>
 
         <ul className="mt-10 space-y-3 text-sm text-muted">
           <li className="border-l-4 border-puente bg-white/70 px-3 py-2">
-            <b className="text-ink">1.</b> Contás tu semana en 30 segundos
+            <b className="text-ink">1.</b> Cuentas tu semana en 30 segundos
           </li>
           <li className="border-l-4 border-coral bg-white/70 px-3 py-2">
-            <b className="text-ink">2.</b> Revisás qué entendió la IA (vos
-            decidís qué se comparte)
+            <b className="text-ink">2.</b> Revisas qué entendió la IA (tú
+            decides qué se comparte)
           </li>
           <li className="border-l-4 border-signal bg-white/70 px-3 py-2">
-            <b className="text-ink">3.</b> Recibís un plan en micro-cápsulas
+            <b className="text-ink">3.</b> Recibes un plan en micro-cápsulas
           </li>
         </ul>
 
         <p className="mt-auto pt-12 text-center text-[11px] text-muted">
-          ¿Sos del equipo Puente?{" "}
+          ¿Eres del equipo Puente?{" "}
           <Link href="/equipo" className="font-bold text-puente underline">
             Entrar con PIN
           </Link>

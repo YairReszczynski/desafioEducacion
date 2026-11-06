@@ -82,7 +82,7 @@ function bumpLiveEvent(entry?: LiveCheckIn) {
   }
 }
 
-/** Persiste el check-in del alumno para que el radar del equipo lo vea altiro. */
+/** Persiste el check-in del alumno para que el radar del equipo lo vea de inmediato. */
 export function publishLiveCheckIn(input: {
   student: Student;
   transcript: string;

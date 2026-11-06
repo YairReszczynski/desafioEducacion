@@ -202,7 +202,7 @@ export function PautaPrint() {
       </article>
 
       <p className="mt-4 text-center text-xs text-muted print:hidden">
-        Tip demo: rellená a mano 1 página, sacá foto en{" "}
+        Tip demo: rellena a mano 1 página, toma una foto en{" "}
         <Link href="/dashboard/digitize" className="underline">
           Digitalizar
         </Link>{" "}

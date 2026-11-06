@@ -32,7 +32,7 @@ Tipo: Seguimiento · Modalidad presencial
 Familia y redes: Vive con madre y hermano menor. Apoyo irregular.
 Salud y bienestar: Cansancio, duerme poco por turnos.
 Situación económica: Trabajo part-time. Estrés por pasajes.
-Habitabilidad: Estudia en el metro / espacios compartidos.
+Habitabilidad: Estudia en el trayecto / espacios compartidos.
 Fortalezas: Motivada, pide ayuda con claridad.
 Oportunidades: Generar confianza rápido (1°-2° año).
 Acuerdos: Check-in semanal + voluntario industria + contactar institución.
@@ -150,7 +150,7 @@ export function DigitizePanel() {
 
   async function digitize() {
     if (!shots.length && !notes.trim()) {
-      setWarning("Subí al menos una foto de la pauta o pegá notas.");
+      setWarning("Sube al menos una foto de la pauta o pega notas.");
       return;
     }
     setLoading(true);
@@ -273,7 +273,7 @@ export function DigitizePanel() {
       <RoleBanner
         role="equipo"
         title="Herramienta de tutores / Coordinación"
-        subtitle="Imprimí la pauta oficial, rellenala a mano y escaneala con foto. El alumno no usa esta pantalla."
+        subtitle="Imprime la pauta oficial, rellénala a mano y escanéala con foto. El alumno no usa esta pantalla."
       />
 
       <header className="mb-6">
@@ -284,9 +284,9 @@ export function DigitizePanel() {
           Pauta papel → digital
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted">
-          Flujo preciso: 1) imprimir pauta oficial · 2) rellenar a mano · 3)
-          foto con cámara · 4) Claude Vision estructura campos · 5) publicar al
-          radar para firma humana.
+          Flujo: 1) imprimir pauta oficial · 2) rellenar a mano · 3) foto con
+          cámara · 4) Claude Vision estructura los campos · 5) publicar al radar
+          para firma humana.
         </p>
       </header>
 
@@ -335,8 +335,8 @@ export function DigitizePanel() {
               2 · Escanear con foto (hasta 3 páginas)
             </p>
             <p className="mt-1 text-sm text-muted">
-              Enfoca el papel con buena luz. Se comprime sola antes de enviar a
-              Claude.
+              Enfoca el papel con buena luz. La foto se comprime sola antes de
+              enviarla a Claude.
             </p>
 
             <div className="mt-3 flex flex-wrap gap-2">
@@ -434,7 +434,7 @@ export function DigitizePanel() {
               </div>
             ) : (
               <p className="mt-3 border border-dashed border-line p-3 text-xs text-muted">
-                Todavía no hay fotos. Capturá la pauta rellena o subí una imagen.
+                Todavía no hay fotos. Captura la pauta rellena o sube una imagen.
               </p>
             )}
           </section>
@@ -446,7 +446,7 @@ export function DigitizePanel() {
             </p>
             <textarea
               className="mt-2 min-h-28 w-full border border-line bg-white p-3 font-mono text-xs"
-              placeholder="Pegá lo que alcanzó a leer el tutor, o usá el ejemplo de demo…"
+              placeholder="Pega lo que alcanzó a leer el tutor, o usa el ejemplo de demo…"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
@@ -487,12 +487,12 @@ export function DigitizePanel() {
             <div className="space-y-3 text-sm text-muted">
               <p className="font-bold text-ink">Resultado estructurado</p>
               <p>
-                Acá aparecen los campos oficiales: académico, familia, salud,
-                económico, habitabilidad, fortalezas, acuerdos, nivel de alerta
-                y termómetro de 3 pilares — con datos sensibles redactados.
+              Aquí aparecen los campos oficiales: académico, familia, salud,
+              económico, habitabilidad, fortalezas, acuerdos, nivel de alerta
+              y termómetro de 3 pilares — con datos sensibles redactados.
               </p>
               <ol className="list-decimal space-y-1 pl-5">
-                <li>Imprimí y rellená a mano</li>
+                <li>Imprime y rellena a mano</li>
                 <li>Foto nítida de cada hoja</li>
                 <li>Digitalizar</li>
                 <li>Publicar al radar (firma humana)</li>

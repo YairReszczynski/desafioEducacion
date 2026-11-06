@@ -50,9 +50,9 @@ export async function transcribeWithParakeet(
 /** Casos de demo para el pitch sin micrófono */
 export const DEMO_TRANSCRIPTS: Record<string, string> = {
   camila:
-    "Hola, esta semana me cambiaron los turnos en la pega. Solo tengo como 25 minutos en el metro de ida y una hora el jueves en la noche. Tengo dos entregas y siento que se me está armando una bola de nieve. Quiero seguir pero necesito acomodar el estudio a esos huecos.",
+    "Hola, esta semana me cambiaron los turnos en el trabajo. Solo tengo unos 25 minutos en el trayecto de ida y una hora el jueves por la noche. Tengo dos entregas y siento que se me acumula todo como una bola de nieve. Quiero seguir, pero necesito acomodar el estudio a esos ratos libres.",
   diego:
-    "La verdad ando mal de plata esta semana. Estoy pensando en congelar porque no me alcanza el pasaje y además me atraso en cálculo. No quiero perder la beca pero no sé cómo pedir ayuda sin que me juzguen.",
+    "La verdad es que esta semana estoy mal de dinero. Estoy pensando en congelar porque no me alcanza el pasaje y además me atraso en cálculo. No quiero perder la beca, pero no sé cómo pedir ayuda sin que me juzguen.",
   ambar:
     "Mi victoria fue terminar el informe. Mi dolor de cabeza es que estoy cuidando a mi hermano y duermo poco. Estoy sobrepasada con Taller y la casa. ¿Pueden marcar esto para que mi tutora me llame el lunes?",
   ok: "Esta semana me fue bien. Aprobé el certamen y pude ir a la reunión de la fundación. Todo tranquilo por ahora.",

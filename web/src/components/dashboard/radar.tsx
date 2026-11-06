@@ -217,7 +217,7 @@ export function DashboardRadar({ students: seed }: { students: Student[] }) {
         <div className="mb-6 border border-dashed border-line bg-white/60 p-4 text-sm text-muted">
           Aún no hay check-ins en vivo. En la demo: abre un{" "}
           <b>link de alumno</b>, completa Caja de Cristal con “Compartir”, y
-          vuelve acá — aparece arriba con su nivel de riesgo.
+          vuelve aquí — aparece arriba con su nivel de riesgo.
         </div>
       )}
 
@@ -422,7 +422,7 @@ export function DashboardRadar({ students: seed }: { students: Student[] }) {
             ) : liveDetail ? (
               <div className="mt-4 border border-dashed border-line bg-paper/60 p-3 text-xs text-muted">
                 Aún no eligió un pedido de red Puente (voluntario / psicológico /
-                CAI). Si vuelve al link y lo elige, aparece acá altiro.
+                CAI). Si vuelve al link y lo elige, aparece aquí de inmediato.
               </div>
             ) : null}
 

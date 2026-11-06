@@ -9,7 +9,7 @@ const MOCK: DigitizeResult = {
   familiaRedes: "Vive con madre y hermano menor; apoyo emocional irregular.",
   saludBienestar: "Cansancio por turnos nocturnos; sueño insuficiente.",
   economicoFamiliar: "Trabajo part-time; estrés por pasajes y materiales.",
-  habitabilidad: "Espacio de estudio compartido; estudia en micro/metro.",
+  habitabilidad: "Espacio de estudio compartido; estudia en el trayecto.",
   fortalezas: "Alta motivación; pide ayuda con claridad; compromiso con la beca.",
   oportunidades: "Confianza tutor-alumno (años 1-2); match voluntario industria.",
   acuerdos:
@@ -27,7 +27,7 @@ function mockFromNotes(notes?: string, hasImage?: boolean): DigitizeResult {
       ...MOCK,
       studentNameGuess: "Becario/a (desde foto)",
       tutorSummary:
-        "Pauta escaneada. Claude no respondió a tiempo: usá reintento o pegá notas. Este mock mantiene la demo viva para el jurado.",
+        "Pauta escaneada. Claude no respondió a tiempo: usa reintento o pega notas. Este mock mantiene la demo viva para el jurado.",
       sensitiveRedacted: ["espera de OCR/visión", "RUT no almacenado en claro"],
     };
   }
@@ -147,6 +147,7 @@ Campos a extraer (aunque la letra sea manuscrita o la foto incluya varias págin
 Privacidad por diseño:
 - NO copies RUT completo ni datos clínicos sensibles; resume y lista qué redactaste en sensitiveRedacted.
 - No inventes hechos que no estén en la foto/notas. Si un campo no se lee, escribe "No legible en la foto".
+- Estilo: español neutro profesional (tú). Sin voseo ni regionalismos.
 
 Pilares 1-10 (1=muy cargado, 10=estable) estimados SOLO desde lo escrito.
 Devuelve SOLO JSON DigitizeResult válido.`,

@@ -53,15 +53,15 @@ export default function VerTutorPage() {
       <h1 className="display mt-2 text-3xl font-bold">Radar en vivo</h1>
       <p className="mt-2 text-sm text-muted">
         Solo aparecen check-ins que autorizaste compartir en{" "}
-        <b>este mismo celular</b>. Completá el flujo alumno y volvé acá.
+        <b>este mismo celular</b>. Completa el flujo alumno y vuelve aquí.
       </p>
 
       {!feed.length ? (
         <div className="mt-8 border border-dashed border-line bg-white/70 p-5 text-sm text-muted">
           <p className="font-bold text-ink">Todavía no hay casos en vivo</p>
           <p className="mt-2">
-            1. Andá a “Probar como alumno” · 2. Completá Caja de Cristal con
-            “Compartir” · 3. Pedí apoyo si querés · 4. Volvé a esta pantalla.
+            1. Ve a “Probar como alumno” · 2. Completa Caja de Cristal con
+            “Compartir” · 3. Pide apoyo si quieres · 4. Vuelve a esta pantalla.
           </p>
           <Link href="/probar" className="btn btn-primary mt-4 w-full">
             Probar como alumno

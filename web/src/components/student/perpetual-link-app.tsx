@@ -144,7 +144,7 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
   }
 
   function useExampleVoice() {
-    const example = `Hola, soy ${student.firstName}. Esta semana me cambiaron los turnos en la pega. Solo tengo como veinticinco minutos en el trayecto y una hora el jueves en la noche. Tengo entregas y siento que se me arma una bola de nieve. Quiero seguir, pero necesito acomodar el estudio a esos huecos.`;
+    const example = `Hola, soy ${student.firstName}. Esta semana me cambiaron los turnos en el trabajo. Solo tengo unos veinticinco minutos en el trayecto y una hora el jueves por la noche. Tengo entregas y siento que se me acumula todo como una bola de nieve. Quiero seguir, pero necesito acomodar el estudio a esos ratos libres.`;
     setTranscript(example);
     setError(null);
   }
@@ -202,7 +202,7 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
     } catch (e) {
       const msg =
         e instanceof Error && e.name === "AbortError"
-          ? "La IA tardó demasiado. Reintenta — si sigue lento, pega el ejemplo y vuelve a pulsar."
+          ? "La IA tardó demasiado. Inténtalo de nuevo; si sigue lento, usa el ejemplo y vuelve a pulsar."
           : e instanceof Error
             ? e.message
             : "Error al analizar";
@@ -489,9 +489,9 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
               </p>
               <p className="mt-1 text-sm text-muted">
                 Los <b>minutos</b> son el tiempo real que tienes esta semana
-                (metro, noche libre, etc.). Claude parte ese bloque en cápsulas
-                cortas. La <b>energía</b> define si el plan queda liviano o más
-                exigente.
+                (trayecto, noche libre, etc.). Claude parte ese bloque en
+                cápsulas cortas. La <b>energía</b> define si el plan queda
+                liviano o más exigente.
               </p>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <div>
@@ -819,8 +819,8 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
                 <p className="mt-3 border border-line bg-paper p-3 text-sm">
                   {plan.tutorNoteDraft}
                 </p>
-                <Link href="/dashboard" className="btn btn-primary mt-3 text-xs">
-                  Abrir radar del equipo (demo) →
+                <Link href="/ver" className="btn btn-primary mt-3 text-xs">
+                  Ver cómo lo ve el tutor →
                 </Link>
               </div>
             ) : (

@@ -14,7 +14,7 @@ Reglas éticas obligatorias:
 - Los 3 pilares de Puente: académico, psicológico/familiar, trabajo/económico (1 = muy cargado, 10 = estable).
 - alertLevel: baja | media | alta | crisis. crisis SOLO si hay intención de autolesión o peligro inmediato.
 - CRÍTICO alertLevel: los pilares pesan más que keywords del texto. Si los 3 pilares están en 8–10, NO uses "alta" (máximo "media" si el relato menciona fricción laboral). Si algún pilar está en 1–3, prioriza "alta".
-- Lenguaje cálido, concreto, en español chileno neutro/profesional.
+- Lenguaje cálido, concreto, en español neutro profesional (tratamiento de tú). Sin voseo ni regionalismos (nada de pega, andá, querés, acá, altiro).
 - CRÍTICO: Usa SIEMPRE el nombre de pila real del estudiante. NUNCA inventes otro nombre.
 - CRÍTICO: summaryForStudent, victory y headache van en SEGUNDA persona (tú/tu) hacia el alumno.
 - CRÍTICO: proposedShare es una NOTA BREVE PARA EL TUTOR en tercera persona, usando solo el nombre de pila (ej. "Camila reporta cambios de turno…"). No uses apellido completo. Basado SOLO en la transcripción.`;
@@ -56,7 +56,7 @@ export function resolveAlertLevel(payload: CheckInPayload): AlertLevel {
   const avgP = (academico + psicologico + trabajo) / 3;
 
   const labourText =
-    /turno|pega|metro|trabajo|vega|local|jornada|sobrecarga laboral|entregas/.test(
+    /turno|pega|trabajo|empleo|vega|local|jornada|sobrecarga laboral|entregas|trayecto/.test(
       t
     );
   const family = /hermano|familia|casa|cuidar|mamá|papá|mama|papa/.test(t);
@@ -124,7 +124,7 @@ function mockSummary(payload: CheckInPayload): GlassBoxSummary {
   const t = raw.toLowerCase();
   const crisis = isCrisisTranscript(t);
   const labour =
-    /turno|pega|metro|trabajo|hora|vega|local|jornada|sobrecarga laboral|entregas/.test(
+    /turno|pega|trabajo|empleo|hora|vega|local|jornada|sobrecarga laboral|entregas|trayecto/.test(
       t
     ) || payload.pillars.trabajo <= 4;
   const family = /hermano|familia|casa|cuidar|mamá|papá|mama|papa/.test(t);

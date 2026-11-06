@@ -36,10 +36,10 @@ const SLIDES = [
     body: "El alumno abre su link, habla 30 segundos, ve qué entendió la IA (Caja de Cristal) y decide si compartir. El mismo link muta a un plan de micro-cápsulas según los minutos reales que tiene esa semana.",
     points: [
       "Check-in de voz · el alumno es dueño del mensaje",
-      "Plan de supervivencia en micro-ventanas (metro / noche)",
-      "Si autoriza, el equipo ve la alerta explicable altiro",
+      "Plan de supervivencia en micro-ventanas (trayecto / noche)",
+      "Si autoriza, el equipo ve la alerta explicable de inmediato",
     ],
-    script: `La solución es un link perpetuo, como un acceso directo: sin app store y sin contraseña. El becario graba media minuta: victoria y dolor de cabeza. Antes de enviar, la Caja de Cristal le muestra qué entendió la IA y él decide si compartir. Si dice que sí, Claude arma un plan de supervivencia partido en los minutos reales que tiene —por ejemplo el metro y una hora el jueves— y ese mismo link queda como su panel de la semana.`,
+    script: `La solución es un link perpetuo, como un acceso directo: sin app store y sin contraseña. El becario graba media minuta: victoria y dolor de cabeza. Antes de enviar, la Caja de Cristal le muestra qué entendió la IA y él decide si compartir. Si dice que sí, Claude arma un plan de supervivencia partido en los minutos reales que tiene —por ejemplo el trayecto y una hora el jueves— y ese mismo link queda como su panel de la semana.`,
   },
   {
     id: 3,

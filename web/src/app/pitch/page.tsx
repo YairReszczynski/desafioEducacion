@@ -70,7 +70,7 @@ const SCRIPTS = [
     id: "turno",
     title: "Sobrecarga laboral (recomendado en vivo)",
     seconds: 22,
-    text: `Hola, esta semana me cambiaron los turnos en la pega. Solo tengo como veinticinco minutos en el metro de ida y una hora el jueves en la noche. Tengo dos entregas y siento que se me arma una bola de nieve. Quiero seguir, pero necesito acomodar el estudio a esos huecos y que mi tutor sepa que no es flojera.`,
+    text: `Hola, esta semana me cambiaron los turnos en el trabajo. Solo tengo unos veinticinco minutos en el trayecto de ida y una hora el jueves por la noche. Tengo dos entregas y siento que se me acumula todo como una bola de nieve. Quiero seguir, pero necesito acomodar el estudio a esos ratos libres y que mi tutor sepa que no es flojera.`,
   },
   {
     id: "familia",
@@ -82,7 +82,7 @@ const SCRIPTS = [
     id: "plata",
     title: "Económico (cuidado: tono de apoyo, no drama)",
     seconds: 18,
-    text: `Ando mal de plata esta semana: casi no me alcanza el pasaje y me atraso en cálculo. No quiero perder la beca ni que me juzguen. Necesito saber qué apoyos hay sin sentir que me están vigilando.`,
+    text: `Esta semana estoy mal de dinero: casi no me alcanza el pasaje y me atraso en cálculo. No quiero perder la beca ni que me juzguen. Necesito saber qué apoyos hay sin sentir que me están vigilando.`,
   },
   {
     id: "ok",

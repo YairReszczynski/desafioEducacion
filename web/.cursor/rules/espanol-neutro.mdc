@@ -1,0 +1,22 @@
+---
+description: Todo el copy de la app en español neutro (tú), sin voseo ni chilenismos
+alwaysApply: true
+---
+
+# Español neutro · tono de producto
+
+Todo texto visible al usuario, guiones, prompts de Claude, ejemplos de voz y mock data va en **español neutro profesional**.
+
+## Obligatorio
+
+- Tratamiento de **tú** (no voseo): prueba, completa, vuelve, quieres, eres, pide, imprime, rellena.
+- Evitar regionalismos chilenos: `pega`, `andá`, `volvé`, `querés`, `podés`, `tenés`, `hacé`, `acá`, `altiro`, `po`, `cachai`, `huecos` (usar *espacios / ratos libres*), etc.
+- Preferir: *trabajo*, *aquí*, *de inmediato*, *transporte / trayecto*, *turnos laborales*.
+- Cálido y concreto, sin slang ni jerga de redes.
+- Prompts de Claude: indicar explícitamente «español neutro, tratamiento de tú, sin voseo ni regionalismos».
+
+## No hacer
+
+- No mezclar voseo rioplatense/chileno con tú.
+- No dejar ejemplos de demo con «la pega» u otras marcas locales.
+- No inventar vocativos regionales en notas al tutor.

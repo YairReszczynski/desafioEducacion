@@ -45,7 +45,7 @@ function EquipoForm() {
       </p>
       <h1 className="display mt-2 text-3xl font-bold">Modo equipo</h1>
       <p className="mt-2 text-sm text-muted">
-        Acá están las diapos, el guion, el radar completo y la pauta papel. El
+        Aquí están las diapos, el guion, el radar completo y la pauta papel. El
         público que escanea el QR no ve esto.
       </p>
 

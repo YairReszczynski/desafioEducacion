@@ -16,11 +16,11 @@ function mockPlan(
       {
         title: "Cápsula trayecto · conceptos base",
         minutes: metro,
-        when: "Ida al trabajo / U",
+        when: "Trayecto al trabajo o a la universidad",
         type: "lectura",
         content:
           materialHint ||
-          "3 ideas clave del PDF: definiciones, ejemplo y error típico. Léelas una vez y márcalas.",
+          "3 ideas clave del material: definiciones, ejemplo y error típico. Léelas una vez y márcalas.",
       },
       {
         title: "Ejercicio ancla",
@@ -28,16 +28,16 @@ function mockPlan(
         when: "Bloque nocturno disponible",
         type: "ejercicio",
         content:
-          "Resuelve 2 ejercicios representativos de la rúbrica (no todos). Anota dónde te trabas.",
+          "Resuelve 2 ejercicios representativos de la rúbrica (no todos). Anota dónde te cuesta avanzar.",
       },
       {
         title: "Repaso express",
         minutes: 10,
-        when: "Antes de dormir o en la vuelta",
+        when: "Antes de dormir o en el regreso",
         type: "repaso",
         content:
           "Ficha de 5 líneas: qué entendí / qué no / qué preguntarle al voluntario o tutor.",
-      },
+      }
     ],
     tutorNoteDraft: `${first} armó un plan en micro-bloques con ${minutes} minutos disponibles esta semana. Sugiero revisar flexibilidad de entrega si hay sobrecarga laboral y activar Voluntario de Industria solo si hay evaluación crítica.`,
     industryVolunteer:
@@ -75,6 +75,7 @@ export async function POST(req: Request) {
       system: `Eres el Compilador de Micro-Ventanas de Fundación Puente.
 Re-empaquetas materia académica en cápsulas reales según el tiempo del alumno que trabaja.
 No juzgas. No hablas de deserción. Devuelves SOLO JSON.
+Español neutro profesional (tú hacia el alumno en headline/capsules; tercera persona en tutorNoteDraft). Sin voseo ni regionalismos.
 tutorNoteDraft: nota corta para el TUTOR en tercera persona usando solo el nombre de pila (${first}).`,
       user: `Genera un SurvivalPlan JSON:
 {

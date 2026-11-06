@@ -95,8 +95,8 @@ const QUOTES: Record<AlertLevel, string[]> = {
     "Estoy pensando en congelar porque no doy más con los turnos.",
   ],
   alta: [
-    "Me cambiaron los turnos; solo tengo 25 min en el metro y una hora el jueves.",
-    "No respondí WhatsApp porque estoy agotado entre pega y cuidados en la casa.",
+    "Me cambiaron los turnos; solo tengo 25 min en el trayecto y una hora el jueves.",
+    "No respondí WhatsApp porque estoy agotado entre el trabajo y los cuidados en casa.",
     "Falté a la tutoría: tenía prueba y turno de noche el mismo día.",
   ],
   media: [
@@ -230,7 +230,7 @@ export function getStudents(): Student[] {
     missedMeetings: 2,
     unansweredMessages: 1,
     quote:
-      "Me cambiaron los turnos; solo tengo 25 min en el metro y una hora el jueves en la noche.",
+      "Me cambiaron los turnos; solo tengo 25 min en el trayecto y una hora el jueves por la noche.",
     suggestedAction:
       "Asignar Voluntario de Industria en Informática + sugerir flexibilidad de entrega al jefe de carrera",
     midYearRisk: true,
