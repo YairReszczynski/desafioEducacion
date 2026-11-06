@@ -1,6 +1,7 @@
 import { DemoSwitcher } from "@/components/demo-switcher";
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, Lato, M_PLUS_Rounded_1c } from "next/font/google";
+import { IBM_Plex_Mono, Lato } from "next/font/google";
+import localFont from "next/font/local";
 import { Suspense } from "react";
 import "./globals.css";
 
@@ -10,10 +11,15 @@ const body = Lato({
   weight: ["400", "700", "900"],
 });
 
-const display = M_PLUS_Rounded_1c({
+// M PLUS Rounded 1c, subset latin autoalojado. Con next/font/google Next descarga
+// cientos de fragmentos CJK de esta fuente y el build falla en redes lentas.
+const display = localFont({
   variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["700", "800"],
+  display: "swap",
+  src: [
+    { path: "./fonts/mplus-rounded-1c-700-latin.woff2", weight: "700", style: "normal" },
+    { path: "./fonts/mplus-rounded-1c-800-latin.woff2", weight: "800", style: "normal" },
+  ],
 });
 
 const mono = IBM_Plex_Mono({

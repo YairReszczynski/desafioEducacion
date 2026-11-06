@@ -25,7 +25,6 @@ import {
   Radio,
   Shield,
   Sparkles,
-  Upload,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -50,7 +49,7 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
   const [glass, setGlass] = useState<GlassBoxSummary | null>(null);
   const [plan, setPlan] = useState<SurvivalPlan | null>(null);
   const [loading, setLoading] = useState(false);
-  const [material, setMaterial] = useState("");
+  const [material] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [requestedSupport, setRequestedSupport] = useState<string | null>(null);
   const [published, setPublished] = useState(false);
@@ -713,23 +712,6 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
                   </div>
                 ))}
               </div>
-
-              <label className="mt-5 flex items-center gap-2 text-xs font-bold uppercase text-muted">
-                <Upload size={14} /> Opcional: pegar apunte para rearmar cápsulas
-              </label>
-              <textarea
-                className="mt-1 min-h-20 w-full border border-line bg-white p-3 text-sm"
-                placeholder="Pega un fragmento de la guía o rúbrica…"
-                value={material}
-                onChange={(e) => setMaterial(e.target.value)}
-              />
-              <button
-                className="btn btn-accent mt-2"
-                disabled={loading || !material.trim()}
-                onClick={confirmAndPlan}
-              >
-                Recompilar con Claude
-              </button>
             </div>
 
             <div className="panel p-5">
