@@ -1,3 +1,42 @@
+/** Detecta HEIC/HEIF (iPhone). */
+export function isHeicFile(file: File): boolean {
+  const t = (file.type || "").toLowerCase();
+  const n = file.name.toLowerCase();
+  return (
+    t.includes("heic") ||
+    t.includes("heif") ||
+    n.endsWith(".heic") ||
+    n.endsWith(".heif")
+  );
+}
+
+/** Convierte un File (incl. HEIC) a data URL JPEG listo para Claude Vision. */
+export async function fileToJpegDataUrl(
+  file: File,
+  opts?: { maxWidth?: number; quality?: number }
+): Promise<{ dataUrl: string; mediaType: string }> {
+  let working: Blob = file;
+
+  if (isHeicFile(file)) {
+    try {
+      const heic2any = (await import("heic2any")).default;
+      const converted = await heic2any({
+        blob: file,
+        toType: "image/jpeg",
+        quality: 0.88,
+      });
+      working = Array.isArray(converted) ? converted[0]! : converted;
+    } catch {
+      throw new Error(
+        "No se pudo convertir la foto HEIC. En el iPhone: Ajustes → Cámara → Formatos → Más compatible, o exporta como JPG."
+      );
+    }
+  }
+
+  const raw = await blobToDataUrl(working);
+  return compressDataUrl(raw, opts);
+}
+
 /** Comprime una foto de pauta para Claude Vision (rápido + bajo peso). */
 export async function compressDataUrl(
   dataUrl: string,
@@ -8,7 +47,6 @@ export async function compressDataUrl(
 
   try {
     const img = await loadImage(dataUrl);
-    // HEIC u otros formatos sin dimensiones → devolver original
     if (!img.width || !img.height) {
       return { dataUrl, mediaType: guessMediaType(dataUrl) };
     }
@@ -28,7 +66,6 @@ export async function compressDataUrl(
     const out = canvas.toDataURL("image/jpeg", quality);
     return { dataUrl: out, mediaType: "image/jpeg" };
   } catch {
-    // Si el navegador no puede decodificar (p. ej. HEIC), usamos el original
     return { dataUrl, mediaType: guessMediaType(dataUrl) };
   }
 }
@@ -47,11 +84,15 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-export function fileToDataUrl(file: File): Promise<string> {
+function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () => reject(new Error("Error al leer el archivo"));
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(blob);
   });
+}
+
+export function fileToDataUrl(file: File): Promise<string> {
+  return blobToDataUrl(file);
 }

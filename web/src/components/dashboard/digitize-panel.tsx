@@ -6,7 +6,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { LoadMeter, loadColor } from "@/components/ui/load-meter";
 import { RoleBanner } from "@/components/ui/role-banner";
 import { publishLiveCheckIn } from "@/lib/checkin-store";
-import { compressDataUrl, fileToDataUrl } from "@/lib/image-compress";
+import { compressDataUrl, fileToJpegDataUrl } from "@/lib/image-compress";
 import { loadInvited, saveInvited } from "@/lib/invite-store";
 import type { DigitizeResult, GlassBoxSummary, Student } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -154,14 +154,32 @@ export function DigitizePanel() {
     for (let i = 0; i < list.length; i++) {
       const file = list[i]!;
       try {
-        const raw = await fileToDataUrl(file);
-        await addShotFromDataUrl(
-          raw,
-          file.name?.trim() || `Foto ${shots.length + i + 1}`
-        );
-      } catch {
+        setCamError(null);
+        setWarning(`Procesando ${file.name || "foto"}…`);
+        const { dataUrl, mediaType } = await fileToJpegDataUrl(file, {
+          maxWidth: 1600,
+          quality: 0.74,
+        });
+        setShots((prev) => {
+          const next = [
+            ...prev,
+            {
+              dataUrl,
+              mediaType,
+              label: file.name?.trim() || `Foto ${prev.length + 1}`,
+            },
+          ];
+          return next.slice(0, 3);
+        });
+        setResult(null);
+        setPublished(false);
+        setWarning(null);
+      } catch (e) {
+        setWarning(null);
         setCamError(
-          `No se pudo leer “${file.name || "la imagen"}”. Usa JPG o PNG.`
+          e instanceof Error
+            ? e.message
+            : `No se pudo leer “${file.name || "la imagen"}”. Prueba JPG o HEIC.`
         );
       }
     }
@@ -361,8 +379,8 @@ export function DigitizePanel() {
               2 · Escanear con foto (hasta 3 páginas)
             </p>
             <p className="mt-1 text-sm text-muted">
-              Enfoca el papel con buena luz. La foto se comprime sola antes de
-              enviarla a Claude.
+              Enfoca el papel con buena luz. Acepta JPG, PNG y HEIC (iPhone). Se
+              convierte y comprime sola antes de enviarla a Claude.
             </p>
 
             <div className="mt-3 flex flex-wrap gap-2">
@@ -417,7 +435,7 @@ export function DigitizePanel() {
               <input
                 ref={fileRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp"
+                accept="image/*,.heic,.heif,image/heic,image/heif,image/jpeg,image/png,image/webp"
                 multiple
                 className="hidden"
                 onChange={(e) => {

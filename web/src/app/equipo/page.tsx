@@ -13,13 +13,13 @@ import { Suspense, useEffect, useState } from "react";
 function EquipoForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") || "/slides";
+  const next = params.get("next") || "/diapos-entrada.html";
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (readEquipoFromDocument()) {
-      router.replace(next.startsWith("/") ? next : "/slides");
+      router.replace(next.startsWith("/") ? next : "/diapos-entrada.html");
     }
   }, [next, router]);
 
@@ -30,7 +30,7 @@ function EquipoForm() {
       return;
     }
     unlockEquipoClient();
-    router.replace(next.startsWith("/") ? next : "/slides");
+    router.replace(next.startsWith("/") ? next : "/diapos-entrada.html");
     router.refresh();
   }
 
@@ -45,8 +45,8 @@ function EquipoForm() {
       </p>
       <h1 className="display mt-2 text-3xl font-bold">Modo equipo</h1>
       <p className="mt-2 text-sm text-muted">
-        Aquí están las diapos, el guion, el radar completo y la pauta papel. El
-        público que escanea el QR no ve esto.
+        Aquí están la entrada del pitch, el guion, el radar, el historial y la
+        pauta papel. El público que escanea el QR no ve esto.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
