@@ -46,6 +46,9 @@ function mockPlan(
 }
 
 export async function POST(req: Request) {
+  let minutes = 90;
+  let studentName: string | undefined;
+  let materialHint = "";
   try {
     const body = (await req.json()) as {
       studentName?: string;
@@ -56,16 +59,14 @@ export async function POST(req: Request) {
       career?: string;
     };
 
-    const minutes = body.availableMinutes ?? 90;
+    minutes = body.availableMinutes ?? 90;
+    studentName = body.studentName;
+    materialHint = body.materialText?.slice(0, 280) || "";
     const first =
       body.studentName?.trim().split(/\s+/)[0] || "El/la estudiante";
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json({
-        data: mockPlan(
-          minutes,
-          body.materialText?.slice(0, 280) || "",
-          body.studentName
-        ),
+        data: mockPlan(minutes, materialHint, studentName),
         mock: true,
       });
     }
@@ -91,6 +92,7 @@ Contexto semana: ${body.transcript ?? "n/d"}
 Material / apunte (recorta a lo esencial):
 """${(body.materialText || "Guía semanal genérica de ramos de 1er año").slice(0, 6000)}"""`,
       maxTokens: 2000,
+      timeoutMs: 12_000,
     });
 
     const data = parseJsonLoose<SurvivalPlan>(text);
@@ -105,7 +107,7 @@ Material / apunte (recorta a lo esencial):
     const message = err instanceof Error ? err.message : "Error";
     return NextResponse.json(
       {
-        data: mockPlan(90, "", "Estudiante"),
+        data: mockPlan(minutes, materialHint, studentName),
         mock: true,
         warning: message,
       },

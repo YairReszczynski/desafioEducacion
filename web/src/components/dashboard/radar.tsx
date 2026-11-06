@@ -201,6 +201,12 @@ export function DashboardRadar({ students: seed }: { students: Student[] }) {
             “{topLive.transcript.slice(0, 200)}
             {topLive.transcript.length > 200 ? "…" : ""}”
           </p>
+          {topLive.requestedSupport ? (
+            <p className="mt-2 inline-flex items-center gap-2 border border-puente bg-white px-2 py-1 text-sm font-bold text-puente">
+              <Phone size={14} />
+              Solicitó: {topLive.requestedSupport}
+            </p>
+          ) : null}
           <p className="mt-2 text-sm font-medium text-puente">
             Prioridad {topLive.glass.alertLevel.toUpperCase()} ·{" "}
             {topLive.glass.tutorBrief}
@@ -311,6 +317,8 @@ export function DashboardRadar({ students: seed }: { students: Student[] }) {
               isLiveStudentId(s.id) ||
               liveFeed.some((c) => c.token === s.token);
             const isReviewed = !!validated[s.id];
+            const live = liveFeed.find((c) => c.token === s.token);
+            const asked = live?.requestedSupport;
             return (
               <button
                 key={s.id}
@@ -348,6 +356,11 @@ export function DashboardRadar({ students: seed }: { students: Student[] }) {
                 <p className="mt-2 line-clamp-2 text-sm italic text-ink/80">
                   “{s.quote}”
                 </p>
+                {asked ? (
+                  <p className="mt-2 text-xs font-bold text-puente">
+                    Solicitó: {asked}
+                  </p>
+                ) : null}
                 <div className="mt-2 flex flex-wrap gap-1">
                   {s.signals.map((sig) => (
                     <span
@@ -391,6 +404,26 @@ export function DashboardRadar({ students: seed }: { students: Student[] }) {
                 </span>
               ) : null}
             </div>
+
+            {liveDetail?.requestedSupport ? (
+              <div className="mt-4 border-2 border-puente bg-[#fff5f6] p-3">
+                <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-puente">
+                  <Phone size={14} /> Pedido explícito del alumno
+                </p>
+                <p className="display mt-1 text-xl font-bold text-ink">
+                  {liveDetail.requestedSupport}
+                </p>
+                <p className="mt-1 text-xs text-muted">
+                  Lo eligió al cerrar el check-in. Decisión humana: contactar /
+                  derivar. La IA no envía nada sola.
+                </p>
+              </div>
+            ) : liveDetail ? (
+              <div className="mt-4 border border-dashed border-line bg-paper/60 p-3 text-xs text-muted">
+                Aún no eligió un pedido de red Puente (voluntario / psicológico /
+                CAI). Si vuelve al link y lo elige, aparece acá altiro.
+              </div>
+            ) : null}
 
             {liveDetail ? (
               <div className="mt-4 border border-puente/30 bg-[#fff5f6] p-3 text-sm">
@@ -457,7 +490,10 @@ export function DashboardRadar({ students: seed }: { students: Student[] }) {
                 Qué sugiere la IA (borrador — no se envía sola)
               </p>
               <p className="mt-1 text-sm font-medium">
-                {selected.suggestedAction}
+                {liveDetail?.requestedSupport &&
+                !/^no necesito ayuda/i.test(liveDetail.requestedSupport)
+                  ? `Priorizar contacto por: ${liveDetail.requestedSupport}`
+                  : selected.suggestedAction}
               </p>
             </div>
 
@@ -472,8 +508,13 @@ export function DashboardRadar({ students: seed }: { students: Student[] }) {
                       [selected.id]: {
                         at: new Date().toLocaleString("es-CL"),
                         action:
-                          selected.suggestedAction ||
-                          "Contacto humano de contención",
+                          liveDetail?.requestedSupport &&
+                          !/^no necesito ayuda/i.test(
+                            liveDetail.requestedSupport
+                          )
+                            ? `Derivación: ${liveDetail.requestedSupport}`
+                            : selected.suggestedAction ||
+                              "Contacto humano de contención",
                         next: `Llamar o escribir a ${selected.firstName} hoy · avisar a ${selected.tutor}`,
                       },
                     }))

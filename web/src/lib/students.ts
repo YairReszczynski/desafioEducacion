@@ -44,6 +44,7 @@ const LAST = [
 ];
 
 const CAREERS = [
+  "Diseño Industrial",
   "Ingeniería Comercial",
   "Técnico en Enfermería",
   "Ingeniería en Informática",

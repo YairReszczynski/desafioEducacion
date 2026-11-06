@@ -24,10 +24,10 @@ export function AlertBadge({
   level,
   className,
 }: {
-  level: AlertLevel;
+  level: AlertLevel | string;
   className?: string;
 }) {
-  const m = MAP[level];
+  const m = MAP[level as AlertLevel] ?? MAP.media;
   return (
     <span
       className={cn(

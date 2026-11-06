@@ -18,26 +18,75 @@ Reglas éticas obligatorias:
 - CRÍTICO: summaryForStudent, victory y headache van en SEGUNDA persona (tú/tu) hacia el alumno.
 - CRÍTICO: proposedShare es una NOTA BREVE PARA EL TUTOR en tercera persona, usando solo el nombre de pila (ej. "Camila reporta cambios de turno…"). No uses apellido completo. Basado SOLO en la transcripción.`;
 
+const CRISIS_RE =
+  /suicid|matarme|autolesi|quitarme la vida|no quiero vivir|hacerme daño|me quiero morir/;
+
+export function isCrisisTranscript(text: string) {
+  return CRISIS_RE.test(text.toLowerCase());
+}
+
+const ALERT_LEVELS = new Set(["baja", "media", "alta", "crisis"]);
+
+function normalizeAlertLevel(
+  value: unknown,
+  fallback: GlassBoxSummary["alertLevel"]
+): GlassBoxSummary["alertLevel"] {
+  const v = String(value ?? "")
+    .toLowerCase()
+    .trim();
+  if (ALERT_LEVELS.has(v)) return v as GlassBoxSummary["alertLevel"];
+  if (v.includes("crisis")) return "crisis";
+  if (v.includes("alta")) return "alta";
+  if (v.includes("media")) return "media";
+  if (v.includes("baja")) return "baja";
+  return fallback;
+}
+
 function mockSummary(payload: CheckInPayload): GlassBoxSummary {
-  const name = payload.firstName?.trim() || payload.studentName?.split(" ")[0] || "El/la estudiante";
-  const full = payload.studentName?.trim() || name;
+  const name =
+    payload.firstName?.trim() ||
+    payload.studentName?.split(" ")[0] ||
+    "El/la estudiante";
   const raw = payload.transcript.trim();
   const t = raw.toLowerCase();
+  const crisis = isCrisisTranscript(t);
   const labour =
-    /turno|pega|metro|trabajo|hora|vega|local|jornada/.test(t) ||
-    payload.pillars.trabajo <= 4;
+    /turno|pega|metro|trabajo|hora|vega|local|jornada|sobrecarga laboral|entregas/.test(
+      t
+    ) || payload.pillars.trabajo <= 4;
   const family = /hermano|familia|casa|cuidar|mamá|papá|mama|papa/.test(t);
-  const money = /plata|pasaje|congelar|beca|dinero|plata/.test(t);
-  const level =
-    /congelar|no doy más|suicid|matarme/.test(t)
-      ? ("crisis" as const)
-      : labour || money
-        ? ("alta" as const)
-        : family
-          ? ("media" as const)
-          : ("baja" as const);
+  const money = /plata|pasaje|congelar|beca|dinero/.test(t);
+  const level = crisis
+    ? ("crisis" as const)
+    : labour || money
+      ? ("alta" as const)
+      : family
+        ? ("media" as const)
+        : ("baja" as const);
 
   const snippet = raw.length > 160 ? `${raw.slice(0, 157)}…` : raw;
+
+  if (crisis) {
+    return {
+      summaryForStudent: `${name}, escuché que estás pasando por un momento muy duro. No estás solo/a: lo prioritario ahora es que una persona de Fundación Puente (o tu red de apoyo) te contacte. Este resumen no reemplaza ayuda humana.`,
+      victory: "Haber pedido ayuda escribiendo cómo te sientes.",
+      headache: "Un momento de mucho dolor o peligro que requiere acompañamiento humano ya.",
+      pillarsTouched: ["psicologico", "academico"],
+      proposedShare: `${name} expresa señales de crisis en el check-in. DERIVACIÓN HUMANA INMEDIATA — no automatizar. Contactar con cercanía y activar protocolo de contención.`,
+      askConsentQuestion: `¿Autorizas que tu tutor/a vea esta alerta ahora para poder acompañarte?`,
+      suggestedActions: [
+        "Contacto humano inmediato del tutor Puente",
+        "Activar protocolo de contención / red de apoyo",
+        "No dejar solo el seguimiento a la IA",
+      ],
+      alertLevel: "crisis",
+      silentSignals: ["nucleo_familiar"],
+      tutorBrief:
+        "CRISIS: el alumno usó lenguaje de autolesión o peligro. Decisión 100% humana. Llamar / WhatsApp ya. La IA solo avisa.",
+      ethicalNote:
+        "La IA no hace contención clínica: prioriza derivación humana. Sin sesgo por origen, género o jornada.",
+    };
+  }
 
   return {
     summaryForStudent: `Esto es lo que escuché de tu semana, ${name}: «${snippet}». ¿Lo ves bien así o quieres ajustar algo antes de compartirlo?`,
@@ -107,6 +156,16 @@ export async function POST(req: Request) {
       );
     }
 
+    // Crisis: no mandar a Claude (puede rechazar/romper JSON y colgar la demo).
+    // Mock inmediato + derivación humana.
+    if (isCrisisTranscript(payload.transcript)) {
+      return NextResponse.json({
+        data: bindStudentName(mockSummary(payload), payload),
+        mock: true,
+        crisis: true,
+      });
+    }
+
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json({
         data: mockSummary(payload),
@@ -143,8 +202,34 @@ Transcripción exacta (no inventes hechos fuera de esto):
       system: SYSTEM,
       user,
       maxTokens: 1800,
+      timeoutMs: 12_000,
     });
-    const data = bindStudentName(parseJsonLoose<GlassBoxSummary>(text), payload);
+    const parsed = parseJsonLoose<GlassBoxSummary>(text);
+    const fallbackLevel = mockSummary(payload).alertLevel;
+    const data = bindStudentName(
+      {
+        ...parsed,
+        alertLevel: normalizeAlertLevel(parsed.alertLevel, fallbackLevel),
+        pillarsTouched: Array.isArray(parsed.pillarsTouched)
+          ? parsed.pillarsTouched
+          : ["academico"],
+        suggestedActions: Array.isArray(parsed.suggestedActions)
+          ? parsed.suggestedActions
+          : [],
+        silentSignals: Array.isArray(parsed.silentSignals)
+          ? parsed.silentSignals
+          : [],
+        summaryForStudent:
+          parsed.summaryForStudent || mockSummary(payload).summaryForStudent,
+        proposedShare:
+          parsed.proposedShare || mockSummary(payload).proposedShare,
+        askConsentQuestion:
+          parsed.askConsentQuestion || mockSummary(payload).askConsentQuestion,
+        tutorBrief: parsed.tutorBrief || mockSummary(payload).tutorBrief,
+        ethicalNote: parsed.ethicalNote || mockSummary(payload).ethicalNote,
+      },
+      payload
+    );
     return NextResponse.json({ data, mock: false });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error";

@@ -20,6 +20,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 const CAREERS = [
+  "Diseño Industrial",
   "Ingeniería en Informática",
   "Técnico en Enfermería",
   "Ingeniería Comercial",

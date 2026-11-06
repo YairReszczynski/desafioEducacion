@@ -5,7 +5,10 @@ import { InstallPWAPrompt } from "@/components/pwa/install-prompt";
 import { AlertBadge } from "@/components/ui/alert-badge";
 import { BackButton } from "@/components/ui/back-button";
 import { RoleBanner } from "@/components/ui/role-banner";
-import { publishLiveCheckIn } from "@/lib/checkin-store";
+import {
+  publishLiveCheckIn,
+  setLiveRequestedSupport,
+} from "@/lib/checkin-store";
 import type {
   GlassBoxSummary,
   Student,
@@ -154,10 +157,13 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
       setLoading(false);
       return;
     }
+    const ctrl = new AbortController();
+    const kill = window.setTimeout(() => ctrl.abort(), 18_000);
     try {
       const res = await fetch("/api/claude/analyze-checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: ctrl.signal,
         body: JSON.stringify({
           token: student.token,
           studentName: student.name,
@@ -171,8 +177,11 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Error");
-      const data = json.data as GlassBoxSummary;
-      if (data?.proposedShare) {
+      const data = json.data as GlassBoxSummary | undefined;
+      if (!data?.summaryForStudent || !data?.proposedShare) {
+        throw new Error("Respuesta incompleta de la IA");
+      }
+      if (data.proposedShare) {
         // Blindaje: nombre del link + tono de nota al tutor
         data.proposedShare = data.proposedShare
           .replace(/\bCamila Rojas\b/gi, student.firstName)
@@ -190,8 +199,15 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
       setGlass(data);
       setStep("glass");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al analizar");
+      const msg =
+        e instanceof Error && e.name === "AbortError"
+          ? "La IA tardó demasiado. Reintenta — si sigue lento, pega el ejemplo y vuelve a pulsar."
+          : e instanceof Error
+            ? e.message
+            : "Error al analizar";
+      setError(msg);
     } finally {
+      window.clearTimeout(kill);
       setLoading(false);
     }
   }
@@ -524,7 +540,9 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
                 disabled={loading}
                 onClick={analyze}
               >
-                {loading ? "Claude está escuchando…" : "Ver qué entendió la IA"}
+                {loading
+                  ? "Analizando… (hasta ~12s)"
+                  : "Ver qué entendió la IA"}
               </button>
             </div>
           </motion.section>
@@ -718,7 +736,23 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
                       "btn text-xs",
                       requestedSupport === a ? "btn-primary" : "btn-ghost"
                     )}
-                    onClick={() => setRequestedSupport(a)}
+                    onClick={() => {
+                      setRequestedSupport(a);
+                      // Publica al radar del equipo (si ya había check-in vivo)
+                      const updated = setLiveRequestedSupport(student.token, a);
+                      if (!updated && consentShare && glass) {
+                        publishLiveCheckIn({
+                          student,
+                          transcript,
+                          glass,
+                          pillars,
+                          minutes,
+                          energy,
+                          requestedSupport: a,
+                        });
+                        setPublished(true);
+                      }
+                    }}
                   >
                     {requestedSupport === a ? `✓ ${a}` : a}
                   </button>
@@ -733,11 +767,11 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
               ) : requestedSupport ? (
                 <p className="mt-3 border border-ok/30 bg-[#e7f2ea] p-3 text-sm text-ok">
                   Listo. Pediste <b>{requestedSupport}</b>. El equipo Puente lo ve
-                  en el radar y te contacta una persona (no un bot).
+                  ahora mismo en el radar y te contacta una persona (no un bot).
                 </p>
               ) : (
                 <p className="mt-3 text-xs text-muted">
-                  Elige una opción para continuar el flujo de la demo.
+                  Elige una opción para que el tutor vea qué pediste.
                 </p>
               )}
             </div>

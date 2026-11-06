@@ -18,6 +18,8 @@ export type LiveCheckIn = {
   pillars: Student["pillars"];
   minutes?: number;
   energy?: number;
+  /** Pedido explícito del alumno al cerrar el flujo (ej. Apoyo psicológico). */
+  requestedSupport?: string | null;
   live: true;
 };
 
@@ -70,6 +72,16 @@ function mapSignals(glass: GlassBoxSummary): SilentSignal[] {
   return ["sobrecarga_academica"];
 }
 
+function bumpLiveEvent(entry?: LiveCheckIn) {
+  try {
+    window.dispatchEvent(
+      new CustomEvent("puente-live-checkin", { detail: entry })
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Persiste el check-in del alumno para que el radar del equipo lo vea altiro. */
 export function publishLiveCheckIn(input: {
   student: Student;
@@ -78,6 +90,7 @@ export function publishLiveCheckIn(input: {
   pillars: Student["pillars"];
   minutes?: number;
   energy?: number;
+  requestedSupport?: string | null;
 }): LiveCheckIn {
   const alertLevel = (input.glass.alertLevel || "media") as AlertLevel;
   const signals = mapSignals(input.glass);
@@ -86,6 +99,10 @@ export function publishLiveCheckIn(input: {
     input.glass.headache ||
     input.glass.summaryForStudent;
 
+  const support = input.requestedSupport?.trim() || null;
+  const wantsHelp =
+    !!support && !/^no necesito ayuda/i.test(support);
+
   const patched: Student = {
     ...input.student,
     alertLevel,
@@ -93,10 +110,11 @@ export function publishLiveCheckIn(input: {
     pillars: input.pillars,
     lastCheckInDaysAgo: 0,
     quote,
-    suggestedAction:
-      input.glass.suggestedActions?.[0] ||
-      input.glass.tutorBrief ||
-      "Contacto humano con cercanía",
+    suggestedAction: wantsHelp
+      ? `Alumno pidió: ${support}`
+      : input.glass.suggestedActions?.[0] ||
+        input.glass.tutorBrief ||
+        "Contacto humano con cercanía",
     midYearRisk: input.student.year <= 2 || alertLevel !== "baja",
   };
 
@@ -111,8 +129,9 @@ export function publishLiveCheckIn(input: {
     saveInvited([patched, ...invited]);
   }
 
+  const prevEntry = loadLiveCheckIns().find((c) => c.token === patched.token);
   const entry: LiveCheckIn = {
-    id: `live-${Date.now()}`,
+    id: prevEntry?.id || `live-${Date.now()}`,
     token: patched.token,
     at: new Date().toISOString(),
     student: patched,
@@ -121,19 +140,54 @@ export function publishLiveCheckIn(input: {
     pillars: input.pillars,
     minutes: input.minutes,
     energy: input.energy,
+    requestedSupport: support ?? prevEntry?.requestedSupport ?? null,
     live: true,
   };
 
   const prev = loadLiveCheckIns().filter((c) => c.token !== patched.token);
   saveLiveCheckIns([entry, ...prev]);
+  bumpLiveEvent(entry);
+  return entry;
+}
 
-  // Aviso cross-tab al dashboard
-  try {
-    window.dispatchEvent(new CustomEvent("puente-live-checkin", { detail: entry }));
-  } catch {
-    /* ignore */
+/** Actualiza el pedido de red Puente cuando el alumno lo elige al final. */
+export function setLiveRequestedSupport(
+  token: string,
+  requestedSupport: string
+): LiveCheckIn | null {
+  const list = loadLiveCheckIns();
+  const idx = list.findIndex((c) => c.token === token);
+  if (idx < 0) return null;
+
+  const support = requestedSupport.trim();
+  const wantsHelp = !!support && !/^no necesito ayuda/i.test(support);
+  const current = list[idx]!;
+  const student: Student = {
+    ...current.student,
+    suggestedAction: wantsHelp
+      ? `Alumno pidió: ${support}`
+      : current.glass.suggestedActions?.[0] ||
+        current.glass.tutorBrief ||
+        "Seguimiento estándar (alumno no pidió contacto extra)",
+  };
+
+  const entry: LiveCheckIn = {
+    ...current,
+    at: new Date().toISOString(),
+    student,
+    requestedSupport: support,
+  };
+  list[idx] = entry;
+  saveLiveCheckIns(list);
+
+  const invited = loadInvited();
+  const iIdx = invited.findIndex((s) => s.token === token);
+  if (iIdx >= 0) {
+    invited[iIdx] = student;
+    saveInvited(invited);
   }
 
+  bumpLiveEvent(entry);
   return entry;
 }
 

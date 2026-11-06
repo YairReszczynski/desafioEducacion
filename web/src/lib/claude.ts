@@ -15,6 +15,8 @@ export async function askClaude(opts: {
   system: string;
   user: string;
   maxTokens?: number;
+  /** Por defecto 12s: en demo el mock es preferible a colgarse. */
+  timeoutMs?: number;
   images?: { mediaType: string; data: string }[];
 }) {
   const client = getAnthropic();
@@ -38,12 +40,21 @@ export async function askClaude(opts: {
   }
   content.push({ type: "text", text: opts.user });
 
-  const response = await client.messages.create({
-    model: CLAUDE_MODEL,
-    max_tokens: opts.maxTokens ?? 2500,
-    system: opts.system,
-    messages: [{ role: "user", content }],
-  });
+  const timeoutMs = opts.timeoutMs ?? 12_000;
+  const response = await Promise.race([
+    client.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: opts.maxTokens ?? 2500,
+      system: opts.system,
+      messages: [{ role: "user", content }],
+    }),
+    new Promise<never>((_, reject) => {
+      setTimeout(
+        () => reject(new Error(`Claude timeout (${timeoutMs}ms)`)),
+        timeoutMs
+      );
+    }),
+  ]);
 
   if (response.stop_reason === "refusal") {
     throw new Error("El modelo rechazó la solicitud. Derivar a una persona.");
