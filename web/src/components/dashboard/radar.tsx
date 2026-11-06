@@ -35,6 +35,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -142,11 +143,12 @@ export function DashboardRadar({ students: seed }: { students: Student[] }) {
     return true;
   });
 
+  // Colores por estado: rojo (crisis), naranja (alta), amarillo (media), verde (baja).
   const chart = [
-    { name: "Crisis", n: stats.crisis },
-    { name: "Alta", n: stats.alta },
-    { name: "Media", n: stats.media },
-    { name: "Baja", n: stats.baja },
+    { name: "Crisis", n: stats.crisis, color: "#9e1127" },
+    { name: "Alta", n: stats.alta, color: "#e0762b" },
+    { name: "Media", n: stats.media, color: "#e3b01f" },
+    { name: "Baja", n: stats.baja, color: "#2f6b45" },
   ];
 
   const topLive = liveFeed[0];
@@ -275,7 +277,11 @@ export function DashboardRadar({ students: seed }: { students: Student[] }) {
               <XAxis dataKey="name" tick={{ fontSize: 12 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Bar dataKey="n" fill="#9e1127" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="n" radius={[2, 2, 0, 0]}>
+                {chart.map((d) => (
+                  <Cell key={d.name} fill={d.color} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
