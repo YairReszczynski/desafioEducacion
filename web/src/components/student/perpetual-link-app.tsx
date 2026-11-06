@@ -4,6 +4,8 @@ import { PuenteLogo } from "@/components/brand/logo";
 import { InstallPWAPrompt } from "@/components/pwa/install-prompt";
 import { AlertBadge } from "@/components/ui/alert-badge";
 import { BackButton } from "@/components/ui/back-button";
+import { RoleBanner } from "@/components/ui/role-banner";
+import { publishLiveCheckIn } from "@/lib/checkin-store";
 import type {
   GlassBoxSummary,
   Student,
@@ -16,11 +18,13 @@ import {
   Check,
   Mic,
   Pause,
+  Radio,
   Shield,
   Sparkles,
   Upload,
   Users,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -44,6 +48,8 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
   const [loading, setLoading] = useState(false);
   const [material, setMaterial] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [requestedSupport, setRequestedSupport] = useState<string | null>(null);
+  const [published, setPublished] = useState(false);
   const timerRef = useRef<number | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
@@ -75,9 +81,13 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
 
   async function startRecording() {
     setError(null);
-    setTranscript("");
+    // No borramos la transcripción previa: el alumno puede regrabar encima
+    // solo si quiere; al detener se conserva lo dicho.
     setSeconds(0);
     setRecording(true);
+    const baseText = transcript.trim();
+    let finals = "";
+
     timerRef.current = window.setInterval(() => {
       setSeconds((s) => {
         if (s >= 29) {
@@ -99,14 +109,24 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
       rec.continuous = true;
       rec.interimResults = true;
       rec.onresult = (ev: SpeechRecognitionEvent) => {
-        let text = "";
-        for (let i = 0; i < ev.results.length; i++) {
-          text += ev.results[i]![0]!.transcript + " ";
+        let interim = "";
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const piece = ev.results[i]![0]!.transcript;
+          if (ev.results[i]!.isFinal) {
+            finals += `${piece} `;
+          } else {
+            interim += piece;
+          }
         }
-        setTranscript(text.trim());
+        const merged = [baseText, finals.trim(), interim.trim()]
+          .filter(Boolean)
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim();
+        setTranscript(merged);
       };
       rec.onerror = () => {
-        /* fallback demo below */
+        /* el texto ya escrito se mantiene */
       };
       recognitionRef.current = rec;
       rec.start();
@@ -119,35 +139,31 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
     recognitionRef.current?.stop();
   }
 
-  async function useDemoVoice() {
-    setLoading(true);
+  function useExampleVoice() {
+    const example = `Hola, soy ${student.firstName}. Esta semana me cambiaron los turnos en la pega. Solo tengo como veinticinco minutos en el trayecto y una hora el jueves en la noche. Tengo entregas y siento que se me arma una bola de nieve. Quiero seguir, pero necesito acomodar el estudio a esos huecos.`;
+    setTranscript(example);
     setError(null);
-    try {
-      const res = await fetch("/api/asr/parakeet", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ demoCase: "camila" }),
-      });
-      const json = await res.json();
-      setTranscript(json.text);
-      setStep("pillars");
-    } catch {
-      setError("No se pudo cargar el audio demo");
-    } finally {
-      setLoading(false);
-    }
   }
 
   async function analyze() {
     setLoading(true);
     setError(null);
+    const locked = transcript.trim();
+    if (!locked) {
+      setError("Falta la transcripción");
+      setLoading(false);
+      return;
+    }
     try {
       const res = await fetch("/api/claude/analyze-checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           token: student.token,
-          transcript,
+          studentName: student.name,
+          firstName: student.firstName,
+          career: student.career,
+          transcript: locked,
           pillars,
           availableMinutes: minutes,
           energy,
@@ -155,7 +171,23 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Error");
-      setGlass(json.data);
+      const data = json.data as GlassBoxSummary;
+      if (data?.proposedShare) {
+        // Blindaje: nombre del link + tono de nota al tutor
+        data.proposedShare = data.proposedShare
+          .replace(/\bCamila Rojas\b/gi, student.firstName)
+          .replace(/\bCamila\b/gi, student.firstName)
+          .replace(/^El\/la estudiante/i, student.firstName);
+        if (
+          !data.proposedShare
+            .toLowerCase()
+            .includes(student.firstName.toLowerCase())
+        ) {
+          data.proposedShare = `${student.firstName} reporta: ${data.proposedShare}`;
+        }
+      }
+      setTranscript(locked);
+      setGlass(data);
       setStep("glass");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al analizar");
@@ -168,17 +200,16 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
     setLoading(true);
     setError(null);
     try {
-      if (consentShare && typeof window !== "undefined") {
-        const key = "puente-checkins";
-        const prev = JSON.parse(localStorage.getItem(key) || "[]");
-        prev.unshift({
-          token: student.token,
-          name: student.name,
-          at: new Date().toISOString(),
+      if (consentShare && glass) {
+        publishLiveCheckIn({
+          student,
+          transcript,
           glass,
           pillars,
+          minutes,
+          energy,
         });
-        localStorage.setItem(key, JSON.stringify(prev.slice(0, 40)));
+        setPublished(true);
       }
       const res = await fetch("/api/claude/survival-plan", {
         method: "POST",
@@ -211,6 +242,12 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
         />
         <PuenteLogo variant="color" className="!h-11 sm:!h-12" priority />
       </div>
+
+      <RoleBanner
+        role="alumno"
+        title={`Hola, ${student.firstName} — este es TU link`}
+        subtitle="Solo tú ves el check-in y el plan. El equipo Puente ve un resumen si tú lo autorizas."
+      />
 
       <header className="mb-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-coral">
@@ -318,8 +355,8 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
           >
             <h2 className="display text-xl font-bold">Tu nota de voz</h2>
             <p className="mt-1 text-sm text-muted">
-              Máximo 30 segundos. Si no hay micrófono, usa el caso demo de
-              Camila.
+              Máximo 30 segundos. Tu texto se conserva editable hasta que lo
+              envíes. Si no hay micrófono, puedes pegar un ejemplo con tu nombre.
             </p>
 
             <div className="mt-6 flex flex-col items-center gap-3 border border-dashed border-line py-8">
@@ -345,10 +382,10 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
               )}
               <button
                 className="btn btn-accent"
-                disabled={loading}
-                onClick={useDemoVoice}
+                type="button"
+                onClick={useExampleVoice}
               >
-                Usar audio demo (Camila)
+                Pegar ejemplo ({student.firstName})
               </button>
             </div>
 
@@ -389,7 +426,9 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
               Termómetro · 3 pilares Puente
             </h2>
             <p className="mt-1 text-sm text-muted">
-              1 = muy cargado · 10 = estable. Toca rápido y listo.
+              ¿Cómo vas en cada área? <b>1 = muy cargado</b> ·{" "}
+              <b>10 = estable</b>. Sirve para priorizar apoyo, no para
+              “calificarte”.
             </p>
 
             {(
@@ -407,6 +446,7 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
                   </div>
                   <span className="display text-2xl font-bold">
                     {pillars[key]}
+                    <span className="text-xs font-bold text-muted"> /10</span>
                   </span>
                 </div>
                 <input
@@ -425,35 +465,48 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
               </div>
             ))}
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wide text-muted">
-                  Minutos reales esta semana
-                </label>
-                <input
-                  type="range"
-                  min={20}
-                  max={240}
-                  step={5}
-                  value={minutes}
-                  onChange={(e) => setMinutes(Number(e.target.value))}
-                  className="mt-2 w-full accent-[#e7ce4f]"
-                />
-                <p className="display text-lg font-bold">{minutes} min</p>
-              </div>
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wide text-muted">
-                  Energía
-                </label>
-                <input
-                  type="range"
-                  min={1}
-                  max={10}
-                  value={energy}
-                  onChange={(e) => setEnergy(Number(e.target.value))}
-                  className="mt-2 w-full accent-[#d35c6d]"
-                />
-                <p className="display text-lg font-bold">{energy}/10</p>
+            <div className="mt-6 border border-signal/60 bg-[#fff9e6] p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-ink">
+                Para armar tu plan de estudio
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                Los <b>minutos</b> son el tiempo real que tienes esta semana
+                (metro, noche libre, etc.). Claude parte ese bloque en cápsulas
+                cortas. La <b>energía</b> define si el plan queda liviano o más
+                exigente.
+              </p>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wide text-muted">
+                    Minutos libres para estudiar
+                  </label>
+                  <input
+                    type="range"
+                    min={20}
+                    max={240}
+                    step={5}
+                    value={minutes}
+                    onChange={(e) => setMinutes(Number(e.target.value))}
+                    className="mt-2 w-full accent-[#e7ce4f]"
+                  />
+                  <p className="display text-lg font-bold">
+                    {minutes} min totales
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wide text-muted">
+                    Energía hoy
+                  </label>
+                  <input
+                    type="range"
+                    min={1}
+                    max={10}
+                    value={energy}
+                    onChange={(e) => setEnergy(Number(e.target.value))}
+                    className="mt-2 w-full accent-[#d35c6d]"
+                  />
+                  <p className="display text-lg font-bold">{energy}/10</p>
+                </div>
               </div>
             </div>
 
@@ -493,7 +546,14 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
               Esto es lo que entendí. Tú decides si se comparte.
             </p>
 
-            <div className="mt-4 border-l-4 border-signal bg-[#fff9e6] p-4 text-sm">
+            <div className="mt-4 border border-line bg-white p-3 text-sm">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-muted">
+                Tu transcripción (sin cambios)
+              </p>
+              <p className="mt-1 italic text-ink/90">“{transcript}”</p>
+            </div>
+
+            <div className="mt-3 border-l-4 border-signal bg-[#fff9e6] p-4 text-sm">
               {glass.summaryForStudent}
             </div>
 
@@ -524,16 +584,23 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
               ))}
             </div>
 
-            <label className="mt-4 block text-xs font-bold uppercase text-muted">
-              Texto propuesto para tu tutor/a (editable)
-            </label>
-            <textarea
-              className="mt-1 min-h-24 w-full border border-line bg-white p-3 text-sm"
-              value={glass.proposedShare}
-              onChange={(e) =>
-                setGlass({ ...glass, proposedShare: e.target.value })
-              }
-            />
+            <div className="mt-4 border border-line bg-paper/80 p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted">
+                Nota para tu tutor/a (editable)
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Esto <b>no es un mensaje para ti</b>: lo lee el equipo Puente. Por
+                eso habla de {student.firstName} en tercera persona. Puedes
+                corregirlo antes de compartir.
+              </p>
+              <textarea
+                className="mt-2 min-h-24 w-full border border-line bg-white p-3 text-sm"
+                value={glass.proposedShare}
+                onChange={(e) =>
+                  setGlass({ ...glass, proposedShare: e.target.value })
+                }
+              />
+            </div>
 
             <p className="mt-3 text-xs text-muted">{glass.ethicalNote}</p>
 
@@ -573,14 +640,17 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-4"
           >
-            <div className="panel p-5">
-              <div className="flex items-center gap-2 text-puente">
+            <div className="panel border-l-4 border-coral p-5">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-coral">
+                1 · Para ti (alumno)
+              </p>
+              <div className="mt-1 flex items-center gap-2 text-puente">
                 <Sparkles size={18} />
                 <h2 className="display text-xl font-bold">{plan.headline}</h2>
               </div>
               <p className="mt-1 text-sm text-muted">
-                El mismo link mutó: ahora es tu panel de supervivencia de la
-                semana.
+                Cápsulas armadas con el tiempo que declaraste. Esto es tu plan
+                de la semana.
               </p>
 
               <div className="mt-4 space-y-3">
@@ -605,7 +675,7 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
               </div>
 
               <label className="mt-5 flex items-center gap-2 text-xs font-bold uppercase text-muted">
-                <Upload size={14} /> Pegar apunte / guía para recompilar
+                <Upload size={14} /> Opcional: pegar apunte para rearmar cápsulas
               </label>
               <textarea
                 className="mt-1 min-h-20 w-full border border-line bg-white p-3 text-sm"
@@ -623,49 +693,106 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
             </div>
 
             <div className="panel p-5">
-              <div className="flex items-center gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-coral">
+                2 · ¿Necesitas algo más? (tú eliges)
+              </p>
+              <div className="mt-1 flex items-center gap-2">
                 <Users size={18} className="text-puente" />
-                <h3 className="display text-lg font-bold">Red Puente · 1 clic</h3>
+                <h3 className="display text-lg font-bold">Red Fundación Puente</h3>
               </div>
               <p className="mt-2 text-sm text-muted">
-                {plan.industryVolunteer}
+                Un toque deja constancia. El equipo humano decide el contacto; no
+                es automático.
               </p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {[
                   "Voluntario industria",
                   "Apoyo psicológico",
                   "Núcleo familiar / CAI",
+                  "No necesito ayuda, gracias",
                 ].map((a) => (
-                  <button key={a} className="btn btn-ghost text-xs">
-                    {a}
+                  <button
+                    key={a}
+                    type="button"
+                    className={cn(
+                      "btn text-xs",
+                      requestedSupport === a ? "btn-primary" : "btn-ghost"
+                    )}
+                    onClick={() => setRequestedSupport(a)}
+                  >
+                    {requestedSupport === a ? `✓ ${a}` : a}
                   </button>
                 ))}
               </div>
-              <div className="mt-4 border border-line bg-paper p-3 text-sm">
-                <p className="text-[11px] font-bold uppercase text-muted">
-                  Borrador para tutor / institución
+              {requestedSupport === "No necesito ayuda, gracias" ? (
+                <p className="mt-3 border border-ok/30 bg-[#e7f2ea] p-3 text-sm text-ok">
+                  Perfecto. Queda registrado que esta semana estás ok con el plan
+                  y no pides contacto extra. Tu tutor igual puede ver el check-in
+                  si lo autorizaste.
                 </p>
-                <p className="mt-1">{plan.tutorNoteDraft}</p>
-              </div>
-              <button
-                className="btn btn-ghost mt-4"
-                type="button"
-                onClick={goBack}
-              >
-                <ArrowLeft size={16} />
-                Atrás
-              </button>
-              <button
-                className="btn btn-ghost mt-2 w-full"
-                type="button"
-                onClick={() => {
-                  stopRecording();
-                  setStep("welcome");
-                }}
-              >
-                Reiniciar demo
-              </button>
+              ) : requestedSupport ? (
+                <p className="mt-3 border border-ok/30 bg-[#e7f2ea] p-3 text-sm text-ok">
+                  Listo. Pediste <b>{requestedSupport}</b>. El equipo Puente lo ve
+                  en el radar y te contacta una persona (no un bot).
+                </p>
+              ) : (
+                <p className="mt-3 text-xs text-muted">
+                  Elige una opción para continuar el flujo de la demo.
+                </p>
+              )}
             </div>
+
+            {consentShare ? (
+              <div className="panel border-dashed p-5">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-muted">
+                  3 · Ya llegó al equipo Puente
+                </p>
+                {published && glass ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1 bg-puente px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
+                      <Radio size={12} /> En vivo en el radar
+                    </span>
+                    <AlertBadge level={glass.alertLevel} />
+                  </div>
+                ) : null}
+                <p className="mt-2 text-sm text-muted">
+                  Autorizaste compartir: Coordinación ya ve tu caso con el nivel
+                  de prioridad que salió de este check-in. Tú sigues en tu plan;
+                  ellos deciden el contacto humano.
+                </p>
+                <p className="mt-3 border border-line bg-paper p-3 text-sm">
+                  {plan.tutorNoteDraft}
+                </p>
+                <Link href="/dashboard" className="btn btn-primary mt-3 text-xs">
+                  Abrir radar del equipo (demo) →
+                </Link>
+              </div>
+            ) : (
+              <div className="panel p-4 text-sm text-muted">
+                Elegiste no compartir con el tutor. Tu plan queda solo en este
+                link y no aparece en el radar.
+              </div>
+            )}
+
+            <button
+              className="btn btn-ghost"
+              type="button"
+              onClick={goBack}
+            >
+              <ArrowLeft size={16} />
+              Atrás
+            </button>
+            <button
+              className="btn btn-ghost w-full"
+              type="button"
+              onClick={() => {
+                stopRecording();
+                setRequestedSupport(null);
+                setStep("welcome");
+              }}
+            >
+              Reiniciar demo
+            </button>
           </motion.section>
         )}
       </AnimatePresence>

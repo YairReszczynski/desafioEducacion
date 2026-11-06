@@ -40,6 +40,9 @@ export interface Student {
 
 export interface CheckInPayload {
   token: string;
+  studentName: string;
+  firstName: string;
+  career?: string;
   transcript: string;
   pillars: {
     academico: number;

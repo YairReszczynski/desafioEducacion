@@ -1,7 +1,7 @@
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Normaliza magic token de la URL (como FormaCoach /workout/[token]). */
+/** Normaliza magic token de la URL del link perpetuo /p/[token]. */
 export function normalizeMagicToken(raw: string): string | null {
   try {
     const trimmed = decodeURIComponent(raw.trim());

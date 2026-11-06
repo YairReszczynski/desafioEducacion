@@ -3,6 +3,7 @@
 import { PuenteLogo } from "@/components/brand/logo";
 import { AlertBadge } from "@/components/ui/alert-badge";
 import { BackButton } from "@/components/ui/back-button";
+import { RoleBanner } from "@/components/ui/role-banner";
 import type { DigitizeResult } from "@/lib/types";
 import { Camera, FileText, Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -66,6 +67,11 @@ export function DigitizePanel() {
         <BackButton href="/dashboard" label="Atrás al radar" />
         <PuenteLogo variant="color" className="!h-12" />
       </div>
+      <RoleBanner
+        role="equipo"
+        title="Herramienta de tutores / Coordinación"
+        subtitle="Digitaliza la pauta en papel. El alumno no usa esta pantalla."
+      />
       <header className="mb-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-coral">
           Del cuaderno a datos seguros

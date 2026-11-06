@@ -9,18 +9,19 @@ interface SpeechRecognition extends EventTarget {
 }
 
 interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
+  readonly resultIndex: number;
+  readonly results: SpeechRecognitionResultList;
 }
 
 interface SpeechRecognitionResultList {
-  length: number;
+  readonly length: number;
   [index: number]: SpeechRecognitionResult;
 }
 
 interface SpeechRecognitionResult {
-  length: number;
+  readonly length: number;
+  readonly isFinal: boolean;
   [index: number]: SpeechRecognitionAlternative;
-  isFinal: boolean;
 }
 
 interface SpeechRecognitionAlternative {

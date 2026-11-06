@@ -19,31 +19,40 @@ export default function HomePage() {
           la pobreza
         </h1>
         <p className="mt-5 max-w-xl text-base text-muted sm:text-lg">
-          Link perpetuo para el becario que trabaja. Radar humano para la
-          Coordinación. Caja de Cristal ética: el alumno es dueño de su mensaje.
+          Primero las 3 diapos del pitch. Después la demo en vivo: link
+          perpetuo del alumno y radar del equipo Puente.
         </p>
 
         <div className="mt-8 flex flex-wrap gap-3">
+          <Link href="/slides" className="btn btn-primary text-base px-6">
+            1 · Abrir 3 diapos del pitch
+          </Link>
+          <Link href="/invitar" className="btn btn-accent">
+            2 · Pasar a la demo (crear link)
+          </Link>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-3">
           <Link
             href={`/p/${DEMO_STUDENT_TOKEN}`}
-            className="btn btn-primary"
+            className="btn btn-ghost text-xs"
           >
-            Abrir link de Camila (1° año)
+            Atajo alumno · Camila
           </Link>
-          <Link href="/dashboard" className="btn btn-accent">
-            Consola · {stats.total} casos
+          <Link href="/dashboard" className="btn btn-ghost text-xs">
+            Atajo equipo · {stats.total} casos
           </Link>
-          <Link href="/dashboard/digitize" className="btn btn-ghost">
-            Digitalizar pauta en papel
+          <Link href="/pitch" className="btn btn-ghost text-xs">
+            Cronómetro 5′
           </Link>
         </div>
 
         <dl className="mt-14 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
           {[
-            ["120", "casos activos"],
-            ["1°–2°", "foco de quiebre"],
-            ["Mitad", "de semestre"],
-            ["3", "pilares Puente"],
+            ["3", "diapos"],
+            ["120", "casos"],
+            ["5′", "pitch + demo"],
+            ["25%", "rúbrica ética"],
           ].map(([n, l]) => (
             <div key={l} className="border border-line bg-white/70 p-3">
               <dt className="display text-2xl font-bold text-puente">{n}</dt>

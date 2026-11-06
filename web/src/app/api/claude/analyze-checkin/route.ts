@@ -2,7 +2,6 @@ import { askClaude, parseJsonLoose } from "@/lib/claude";
 import type { CheckInPayload, GlassBoxSummary } from "@/lib/types";
 import { NextResponse } from "next/server";
 
-
 const SYSTEM = `Eres el motor ético de Fundación Puente ("La educación supera la pobreza").
 Acompañas a becarios de educación superior (muchos primera generación y/o que trabajan).
 Tu trabajo: analizar el check-in semanal del estudiante y devolver SOLO JSON válido.
@@ -14,14 +13,21 @@ Reglas éticas obligatorias:
 - Prioriza señales silenciosas reales: no responde WhatsApp, falta a reuniones, turnos laborales, núcleo familiar, carga académica.
 - Los 3 pilares de Puente: académico, psicológico/familiar, trabajo/económico.
 - alertLevel: baja | media | alta | crisis (crisis solo si hay intención de autolesión o peligro inmediato; en ese caso prioriza derivación humana).
-- Lenguaje cálido, concreto, en español chileno neutro/profesional.`;
+- Lenguaje cálido, concreto, en español chileno neutro/profesional.
+- CRÍTICO: Usa SIEMPRE el nombre de pila real del estudiante. NUNCA inventes otro nombre.
+- CRÍTICO: summaryForStudent, victory y headache van en SEGUNDA persona (tú/tu) hacia el alumno.
+- CRÍTICO: proposedShare es una NOTA BREVE PARA EL TUTOR en tercera persona, usando solo el nombre de pila (ej. "Camila reporta cambios de turno…"). No uses apellido completo. Basado SOLO en la transcripción.`;
 
 function mockSummary(payload: CheckInPayload): GlassBoxSummary {
-  const t = payload.transcript.toLowerCase();
+  const name = payload.firstName?.trim() || payload.studentName?.split(" ")[0] || "El/la estudiante";
+  const full = payload.studentName?.trim() || name;
+  const raw = payload.transcript.trim();
+  const t = raw.toLowerCase();
   const labour =
-    /turno|pega|metro|trabajo|hora/.test(t) || payload.pillars.trabajo <= 4;
-  const family = /hermano|familia|casa|cuidar|mamá|papá/.test(t);
-  const money = /plata|pasaje|congelar|beca|plata/.test(t);
+    /turno|pega|metro|trabajo|hora|vega|local|jornada/.test(t) ||
+    payload.pillars.trabajo <= 4;
+  const family = /hermano|familia|casa|cuidar|mamá|papá|mama|papa/.test(t);
+  const money = /plata|pasaje|congelar|beca|dinero|plata/.test(t);
   const level =
     /congelar|no doy más|suicid|matarme/.test(t)
       ? ("crisis" as const)
@@ -31,20 +37,25 @@ function mockSummary(payload: CheckInPayload): GlassBoxSummary {
           ? ("media" as const)
           : ("baja" as const);
 
+  const snippet = raw.length > 160 ? `${raw.slice(0, 157)}…` : raw;
+
   return {
-    summaryForStudent:
-      "Noté sobrecarga de tiempo por trabajo y entregas. Entiendo que quieres seguir, pero necesitas micro-bloques de estudio y eventualmente flexibilidad.",
-    victory: "Seguir intentando acomodar el semestre pese a los turnos.",
-    headache: "Poco tiempo real (metro + una noche) vs. entregas acumuladas.",
+    summaryForStudent: `Esto es lo que escuché de tu semana, ${name}: «${snippet}». ¿Lo ves bien así o quieres ajustar algo antes de compartirlo?`,
+    victory: labour
+      ? "Seguir buscando acomodar el semestre pese a la carga de esta semana."
+      : "Haber dejado registrado cómo te fue.",
+    headache: labour
+      ? "La fricción de tiempo/trabajo frente a lo académico."
+      : family
+        ? "La carga en casa o redes de apoyo."
+        : "Lo que más te pesó según tus propias palabras.",
     pillarsTouched: [
-      "trabajo",
+      ...(labour ? (["trabajo"] as const) : []),
       "academico",
       ...(family ? (["psicologico"] as const) : []),
     ],
-    proposedShare:
-      "Camila tuvo sobrecarga laboral esta semana; propone estudiar en micro-ventanas. Sugiero contactar tutor y evaluar flexibilidad de entrega sin penalización.",
-    askConsentQuestion:
-      "¿Quieres compartir este resumen con tu tutor/a de Fundación Puente o prefieres editarlo primero?",
+    proposedShare: `${name} reporta esta semana: «${snippet}». Sugiero contacto con cercanía y, si aplica, micro-bloques de estudio o flexibilidad puntual — sin sanción.`,
+    askConsentQuestion: `¿Quieres compartir este resumen con tu tutor/a de Fundación Puente o prefieres editarlo primero?`,
     suggestedActions: [
       "Compilar plan de supervivencia en micro-ventanas",
       "Solicitar Voluntario de Industria si hay prueba crítica",
@@ -61,6 +72,30 @@ function mockSummary(payload: CheckInPayload): GlassBoxSummary {
   };
 }
 
+function bindStudentName(
+  data: GlassBoxSummary,
+  payload: CheckInPayload
+): GlassBoxSummary {
+  const first = payload.firstName?.trim();
+  const full = payload.studentName?.trim();
+  if (!first && !full) return data;
+
+  let proposed = data.proposedShare || "";
+  const safe = first || full?.split(" ")[0] || "El/la estudiante";
+  proposed = proposed
+    .replace(/\bCamila Rojas\b/gi, safe)
+    .replace(/\bCamila\b/gi, safe)
+    .replace(/^El\/la estudiante/i, safe);
+  if (first && !proposed.toLowerCase().includes(first.toLowerCase())) {
+    proposed = `${first} reporta: ${proposed}`;
+  }
+
+  return {
+    ...data,
+    proposedShare: proposed,
+  };
+}
+
 export async function POST(req: Request) {
   let payload: CheckInPayload | null = null;
   try {
@@ -73,7 +108,10 @@ export async function POST(req: Request) {
     }
 
     if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json({ data: mockSummary(payload), mock: true });
+      return NextResponse.json({
+        data: mockSummary(payload),
+        mock: true,
+      });
     }
 
     const user = `Analiza este check-in y responde SOLO con JSON:
@@ -91,11 +129,14 @@ export async function POST(req: Request) {
   "ethicalNote": string
 }
 
-Nombre token: ${payload.token}
+Nombre completo del estudiante (OBLIGATORIO en proposedShare): ${payload.studentName}
+Nombre de pila: ${payload.firstName}
+Carrera: ${payload.career ?? "n/d"}
+Token: ${payload.token}
 Pilares (1-10, menor = más carga): ${JSON.stringify(payload.pillars)}
 Minutos disponibles: ${payload.availableMinutes ?? "n/d"}
 Energía: ${payload.energy ?? "n/d"}
-Transcripción:
+Transcripción exacta (no inventes hechos fuera de esto):
 """${payload.transcript}"""`;
 
     const text = await askClaude({
@@ -103,7 +144,7 @@ Transcripción:
       user,
       maxTokens: 1800,
     });
-    const data = parseJsonLoose<GlassBoxSummary>(text);
+    const data = bindStudentName(parseJsonLoose<GlassBoxSummary>(text), payload);
     return NextResponse.json({ data, mock: false });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error";
