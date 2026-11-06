@@ -1,0 +1,22 @@
+{
+  "name": "Puente Semanal",
+  "short_name": "Puente",
+  "description": "Check-in semanal y plan de supervivencia para becarios de Fundación Puente",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f5f1",
+  "theme_color": "#9E1127",
+  "lang": "es-CL",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

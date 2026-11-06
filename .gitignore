@@ -12,3 +12,10 @@ __pycache__/
 .venv/
 *.pyc
 ~$*.xlsx
+
+# App web
+web/node_modules/
+web/.next/
+web/.env*
+web/.vercel/
+!web/.env.example
