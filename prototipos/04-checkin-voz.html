@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototipo 4 · Check-in semanal por voz → seguimiento de la fundación</title>
+<style>
+:root{--navy:#1f2340;--pink:#d6336c;--yellow:#f2c230;--gray:#5b5f73;--light:#f6f6f9;--line:#e3e3ea;--ok:#2f7d4f;--warn:#a15c00;--bad:#b42318;--nv:#76b900}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#1d1d24;background:var(--light)}
+header{background:var(--navy);color:#fff;padding:10px 18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header h1{font-size:17px;margin:0} header .sp{flex:1}
+.badge{background:var(--yellow);color:var(--navy);font-size:12px;font-weight:700;padding:2px 9px;border-radius:10px;white-space:nowrap}
+.ia{display:flex;gap:6px;align-items:center;font-size:13px;flex-wrap:wrap}
+.ia select,.ia input{font:inherit;font-size:13px;padding:3px 6px;border-radius:5px;border:1px solid #888}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;padding:16px;max-width:1440px;margin:0 auto}
+@media(max-width:1100px){.layout{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+h2{font-size:17px;margin:0 0 8px;color:var(--navy)} h3{font-size:14px;margin:12px 0 6px;color:var(--pink)}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button{flex:1;min-width:180px;border:1px solid var(--line);background:#fff;padding:10px;border-radius:8px;cursor:pointer;font:inherit;font-weight:700;color:var(--gray)}
+.tabs button[aria-selected=true]{background:var(--navy);color:#fff;border-color:var(--navy)}
+button.btn{font:inherit;font-weight:700;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--navy);color:#fff}
+button.btn.p{background:var(--pink)} button.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--navy)} button.btn.sm{padding:6px 10px;font-size:13px}
+button.btn.rec{background:var(--bad)}
+button.btn:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+textarea{width:100%;font:inherit;font-size:14px;border:1px solid #c9c9d6;border-radius:8px;padding:8px;min-height:70px}
+select,input[type=number],input[type=date]{font:inherit;font-size:14px;padding:4px 6px;border-radius:6px;border:1px solid #c9c9d6}
+.muted{color:var(--gray);font-size:13px}
+.flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.note{background:#fff8e1;border-left:4px solid var(--yellow);padding:8px 11px;border-radius:6px;margin:8px 0;font-size:14px}
+.note.ok{background:#e9f6ee;border-left-color:var(--ok)} .note.bad{background:#fdf0ee;border-left-color:var(--bad)} .note.ia{background:#f3f0ff;border-left-color:#6b5bd6} .note.nv{background:#f2f9e6;border-left-color:var(--nv)}
+.hidden{display:none!important}
+/* teléfono */
+.phonewrap{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+.phone{width:360px;max-width:100%;min-height:640px;background:#fff;border:10px solid #15172b;border-radius:34px;padding:18px 16px;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+.phone .top{display:flex;justify-content:space-between;font-size:12px;color:var(--gray);margin-bottom:8px}
+.guide li{margin-bottom:4px}
+.recbox{text-align:center;padding:14px;border:2px dashed var(--line);border-radius:14px;margin:10px 0}
+.timer{font-size:28px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+.chip{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:10px;margin:2px 3px 2px 0;background:var(--light);border:1px solid var(--line)}
+.side-info{flex:1;min-width:260px}
+/* niveles */
+.lvl{display:inline-block;font-weight:800;font-size:12px;padding:2px 9px;border-radius:10px;white-space:nowrap}
+.lvl.crisis{background:var(--bad);color:#fff} .lvl.alta{background:#fde8ec;color:var(--bad)} .lvl.media{background:#fff4d6;color:var(--warn)} .lvl.baja{background:#e7f4ec;color:var(--ok)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{background:var(--navy);color:#fff;text-align:left;padding:6px 8px;font-weight:600;position:sticky;top:0}
+td{border-bottom:1px solid var(--line);padding:6px 8px;vertical-align:top}
+tr.row{cursor:pointer} tr.row:hover td{background:#fff7dd} tr.sel td{background:#fff1c2!important} tr.nuevo td{box-shadow:inset 4px 0 0 var(--pink)}
+.scroll{max-height:440px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.kpi{background:#fff;border:1px solid var(--line);border-top:4px solid var(--navy);border-radius:6px;padding:8px 10px}
+.kpi b{display:block;font-size:22px;color:var(--navy)} .kpi span{font-size:12px;color:var(--gray)} .kpi.p{border-top-color:var(--pink)} .kpi.y{border-top-color:var(--yellow)}
+.pipe{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:6px 0 12px}
+.pipe div{border-radius:8px;padding:8px 6px;font-size:12px;text-align:center;background:var(--light);border:1px solid var(--line)}
+.pipe div b{display:block;font-size:12.5px;color:var(--navy);margin-bottom:2px}
+.pipe div.done{background:#e9f6ee;border-color:#a9d6b9} .pipe div.ai{background:#f3f0ff;border-color:#c9c0f2} .pipe div.hum{background:#fff4d6;border-color:var(--yellow)} .pipe div.nv{background:#f2f9e6;border-color:#bfe08a}
+pre{background:#1f2340;color:#f6f6f9;padding:10px;border-radius:8px;font-size:12px;white-space:pre-wrap;max-height:300px;overflow:auto}
+.tl{border-left:3px solid var(--line);margin-left:8px;padding-left:12px}
+.tl .ev{position:relative;margin-bottom:10px;font-size:13.5px}
+.tl .ev:before{content:"";position:absolute;left:-19px;top:4px;width:11px;height:11px;border-radius:50%;background:var(--navy)}
+.tl .ev.miss:before{background:#c9c9d6} .tl .ev.dec:before{background:var(--yellow)} .tl .ev.cri:before{background:var(--bad)}
+.q{font-style:italic;color:#333}
+fieldset{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:0 0 10px}
+legend{font-weight:700;font-size:14px;color:var(--navy);padding:0 4px}
+fieldset label{display:block;font-size:14px;margin:3px 0;cursor:pointer}
+.rec-s{font-size:11px;font-weight:700;color:var(--pink);margin-left:4px}
+aside textarea{min-height:38px;font-size:13px}
+.wtable input{width:60px}
+footer{text-align:center;font-size:12px;color:var(--gray);padding:8px 0 22px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Check-in semanal por voz · seguimiento de la fundación</h1><span class="badge">Prototipo 4 · datos 100% ficticios</span>
+  <span class="sp"></span>
+  <div class="ia">
+    <label for="iaMode">Análisis del texto:</label>
+    <select id="iaMode"><option value="mock">Simulado (sin internet)</option><option value="claude">Claude (API)</option></select>
+    <select id="iaModel" class="hidden" aria-label="Modelo"><option value="claude-opus-5-5">claude-opus-5-5</option><option value="claude-sonnet-5-5">claude-sonnet-5-5</option><option value="claude-haiku-5-5">claude-haiku-5-5</option></select>
+    <input id="iaKey" class="hidden" type="password" placeholder="Clave de API (solo en memoria)" aria-label="Clave de API" size="24">
+  </div>
+</header>
+
+<div class="layout">
+<main>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="est">🎙️ 1 · Estudiante: mi check-in</button>
+    <button role="tab" aria-selected="false" data-tab="dentro">⚙️ 2 · ¿Qué pasa por dentro?</button>
+    <button role="tab" aria-selected="false" data-tab="fund">🤝 3 · Fundación: seguimiento</button>
+  </div>
+
+  <!-- ===== 1 ESTUDIANTE ===== -->
+  <section id="tab-est">
+    <div class="phonewrap">
+      <div class="phone" aria-label="Vista de celular del estudiante">
+        <div class="top"><b>Mi check-in</b><span>Semana 6</span></div>
+
+        <div id="st0">
+          <h2>Hola 👋 ¿cómo va tu semana?</h2>
+          <p class="muted">Cuéntanos en una nota de voz (máx. 90 s) o escribiendo. Tu mentor/a de la fundación te puede acompañar mejor si sabe cómo estás.</p>
+          <div class="note"><b>Antes de empezar:</b>
+            <label class="flex" style="margin-top:6px"><input type="checkbox" id="cTrans"> <span>Acepto que mi audio se transforme en texto. <b>El audio se borra</b> apenas termina.</span></label>
+            <label class="flex" style="margin-top:6px"><input type="checkbox" id="cShare"> <span>Compartir el resumen con mi mentor/a de la fundación (puedo cambiarlo después).</span></label>
+            <p class="muted" style="margin:6px 0 0">No analizamos tu tono de voz ni tus emociones: solo lo que tú decides contar.</p>
+          </div>
+          <button class="btn p" id="go1" disabled>Comenzar</button>
+        </div>
+
+        <div id="st1" class="hidden">
+          <h2>Tu nota de voz</h2>
+          <ul class="guide muted"><li>¿Cómo te fue esta semana?</li><li>¿Qué te costó más?</li><li>¿Necesitas algo?</li></ul>
+          <label class="muted" for="tMode">Transcripción en este prototipo:</label>
+          <select id="tMode" style="width:100%;margin:4px 0">
+            <option value="sim">Simulada · caso de ejemplo</option>
+            <option value="live">En vivo del navegador (solo demo)</option>
+            <option value="text">Prefiero escribir</option>
+          </select>
+          <select id="caseSel" style="width:100%;margin:4px 0" aria-label="Caso de ejemplo">
+            <option value="camila">Camila · trabajo y horarios</option>
+            <option value="diego">Diego · plata y pensar en congelar</option>
+            <option value="ambar">Ámbar · cansancio y familia</option>
+            <option value="ambarC">Ámbar · variante con señal de crisis</option>
+            <option value="joaquin">Joaquín · le va bien</option>
+          </select>
+          <p class="muted hidden" id="liveWarn">⚠ La transcripción del navegador envía el audio a Google. En la versión real se usa un modelo de NVIDIA, local o en la nube institucional.</p>
+          <div class="recbox" id="recBox">
+            <div class="timer" id="timer">0:00</div>
+            <button class="btn rec" id="recBtn">● Grabar</button>
+            <audio id="player" controls class="hidden" style="width:100%;margin-top:8px"></audio>
+            <p class="muted" id="recMsg" style="margin:6px 0 0">Si no hay micrófono, usamos un audio de ejemplo.</p>
+            <p class="muted" id="liveText" style="margin:6px 0 0"></p>
+          </div>
+          <textarea id="typed" class="hidden" placeholder="Escribe aquí cómo estuvo tu semana…" aria-label="Tu check-in escrito"></textarea>
+          <button class="btn p" id="go2">Transformar en texto</button>
+          <p class="muted" id="go2Msg"></p>
+        </div>
+
+        <div id="st2" class="hidden">
+          <h2>¿Esto es lo que quisiste decir?</h2>
+          <p class="muted">Puedes corregir cualquier palabra. A veces la transcripción se equivoca con algunos acentos o con ruido.</p>
+          <textarea id="transcript" style="min-height:170px" aria-label="Transcripción"></textarea>
+          <p class="muted" id="delMsg"></p>
+          <button class="btn p" id="go3">Sí, continuar</button> <span class="muted" id="go3Msg"></span>
+        </div>
+
+        <div id="st3" class="hidden">
+          <h2>Lo que entendimos</h2>
+          <div id="understood"></div>
+          <label class="flex" style="margin:8px 0"><input type="checkbox" id="cShare2"> <span>Compartir este resumen con mi mentor/a</span></label>
+          <div class="flex"><button class="btn p" id="send">Enviar check-in</button><button class="btn ghost sm" id="humanBtn">Hablar con una persona</button></div>
+        </div>
+
+        <div id="st4" class="hidden">
+          <h2>¡Gracias por contarnos! 💛</h2>
+          <div id="doneMsg"></div>
+          <button class="btn ghost" id="again">Hacer otro check-in (demo)</button>
+        </div>
+        <div id="humanCard" class="hidden"></div>
+      </div>
+
+      <div class="side-info">
+        <div class="card">
+          <h2>Cómo funcionaría de verdad</h2>
+          <ol class="muted" style="padding-left:18px;font-size:14px">
+            <li>Cada semana, el becado recibe un recordatorio (app o WhatsApp).</li>
+            <li>Graba una nota de voz de hasta 90 s, o escribe.</li>
+            <li><b>Modelo de NVIDIA</b> (Parakeet o Canary) la transforma en texto. <b>El audio se borra.</b></li>
+            <li>El estudiante <b>revisa y corrige</b> su transcripción.</li>
+            <li>Claude <b>extrae señales</b> del texto, y reglas transparentes calculan la prioridad.</li>
+            <li>La fundación <b>valida</b> la prioridad y hace seguimiento del caso.</li>
+          </ol>
+          <div class="note nv"><b>En la versión real: NVIDIA Parakeet / Canary</b> (gratis, local o vía NVIDIA NIM). En este prototipo la transcripción es simulada o del navegador. <b>Por verificar:</b> modelo exacto, licencia, soporte de español y si corre bien sin GPU NVIDIA (plan B: Whisper local).</div>
+          <p class="muted">Para usar el micrófono real, abre este archivo con un servidor local: <code>python3 -m http.server</code> y entra a <code>http://localhost:8000/04-checkin-voz.html</code>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 2 POR DENTRO ===== -->
+  <section id="tab-dentro" class="hidden">
+    <div class="card">
+      <h2>El último check-in, paso a paso</h2>
+      <div class="pipe" id="pipe"></div>
+      <div id="pipeDetail"><p class="muted">Haz un check-in en la pestaña 1 para ver aquí qué pasa con él.</p></div>
+    </div>
+    <div class="card">
+      <h2>¿Cómo se calcula la prioridad? (la fundación puede ajustar los pesos)</h2>
+      <p class="muted">La IA <b>extrae</b> señales del texto (temas, intensidad de 1 a 3, citas). <b>No decide</b> la prioridad: la calculan reglas visibles, y al final la valida una persona.</p>
+      <table class="wtable"><thead><tr><th>Señal</th><th>Peso</th><th>Cómo suma</th></tr></thead><tbody id="wBody"></tbody></table>
+      <p class="muted">Niveles: <span class="lvl alta">Alta</span> ≥ <input type="number" id="thA" value="10" min="1" step="1" style="width:56px"> puntos · <span class="lvl media">Media</span> ≥ <input type="number" id="thM" value="5" min="1" step="1" style="width:56px"> puntos · <span class="lvl crisis">Atención inmediata</span> si hay señal de crisis (no pasa por puntaje).</p>
+    </div>
+    <div class="card">
+      <h2>Decisiones éticas de diseño</h2>
+      <ul style="font-size:14px">
+        <li><b>No analizamos el tono de voz ni emociones</b> del audio: es poco confiable, puede discriminar y nadie lo pidió. Solo el contenido que el estudiante decide contar.</li>
+        <li><b>El audio se borra</b> al transcribir; se guarda el texto corregido y un resumen.</li>
+        <li><b>El estudiante corrige su transcripción</b> antes de que se analice.</li>
+        <li><b>La IA no decide:</b> extrae señales; la prioridad usa reglas visibles y la valida una persona.</li>
+        <li><b>Crisis siempre a personas:</b> un filtro previo detecta frases de riesgo y salta la cola.</li>
+        <li><b>No responder no es una falta:</b> 2 semanas sin check-in generan un contacto humano amable, nunca una sanción.</li>
+        <li><b>Lenguaje:</b> "necesita apoyo", nunca "va a desertar".</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== 3 FUNDACIÓN ===== -->
+  <section id="tab-fund" class="hidden">
+    <div class="kpis" id="kpis"></div>
+    <div class="card">
+      <h2>Becados por prioridad de apoyo <span class="muted">· solo quienes compartieron (o con protocolo de crisis)</span></h2>
+      <div class="scroll"><table><thead><tr><th>Prioridad</th><th>Becado/a</th><th>Carrera · sede · jornada</th><th>Por qué (sus palabras)</th><th>Últimas 6 semanas</th><th>Estado</th></tr></thead><tbody id="qBody"></tbody></table></div>
+    </div>
+    <div class="card" id="ficha"><p class="muted">Selecciona un becado/a para ver su historial, la recomendación y validar.</p></div>
+    <div class="card">
+      <h2>Mini auditoría</h2>
+      <div id="audit"></div>
+    </div>
+    <div class="card">
+      <h2>Contexto oficial (datos del repositorio del equipo · <code>data/</code>)</h2>
+      <div id="ctx"></div>
+    </div>
+  </section>
+</main>
+
+<aside>
+  <div class="card">
+    <h2>Para decidir en equipo</h2>
+    <div id="questions"></div>
+    <div class="flex"><button class="btn p sm" id="export">Exportar decisiones (.md)</button><span class="muted" id="exportMsg"></span></div>
+  </div>
+</aside>
+</div>
+<footer>Prototipo exploratorio para discusión del equipo · Hackathon IA Aplicada · Congreso Social UC 2026 · Desafío 2 · No es la versión final ni usa datos reales.</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const parseJSON = t => { const m = t.match(/[\[{][\s\S]*[\]}]/); return JSON.parse(m ? m[0] : t); };
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const rnd = mulberry32(611);
+const pick = a => a[Math.floor(rnd() * a.length)];
+
+/* ---------- IA (simulada o Claude) ---------- */
+const CFG = { mode: "mock", model: "claude-opus-5-5", key: "" };
+$("iaMode").onchange = () => { CFG.mode = $("iaMode").value; $("iaModel").classList.toggle("hidden", CFG.mode !== "claude"); $("iaKey").classList.toggle("hidden", CFG.mode !== "claude"); };
+$("iaModel").onchange = () => CFG.model = $("iaModel").value;
+$("iaKey").oninput = () => CFG.key = $("iaKey").value.trim();
+const useIA = () => CFG.mode === "claude" && CFG.key;
+async function askIA(system, messages, maxTokens = 3000) {
+  const { default: Anthropic } = await import("https://esm.sh/@anthropic-ai/sdk@1.6.0");
+  const client = new Anthropic({ apiKey: CFG.key, dangerouslyAllowBrowser: true }); // solo para prototipo local
+  const params = { model: CFG.model, max_tokens: maxTokens, system, messages, output_config: { effort: "low" } };
+  if (/^claude-(opus|sonnet)/.test(CFG.model)) { params.betas = ["server-side-fallback-2026-07-01"]; params.fallbacks = "default"; }
+  const r = await client.beta.messages.create(params);
+  if (r.stop_reason === "refusal") return "No puedo ayudar con eso. Deriva a una persona del equipo de apoyo.";
+  return r.content.filter(b => b.type === "text").map(b => b.text).join("");
+}
+
+/* ---------- señales ---------- */
+const THEMES = {
+  economico:  { label: "Económico", friendly: "temas de plata", w: 3, kw: ["plata", "dinero", "pagar", "arriendo", "beca", "deuda", "no me alcanza", "pasaje", "cuota", "credito", "segundo trabajo", "materiales"], support: "Información de becas y beneficios de la fundación" },
+  academico:  { label: "Académico", friendly: "lo académico", w: 2, kw: ["prueba", "reprob", "ramo", "no entiendo", "atrasando", "atrasad", "estudiar", "certamen", "examen", "calculo", "quimica", "estadistica"], support: "Tutoría académica y ayudantías" },
+  emocional:  { label: "Emocional", friendly: "cómo te has sentido", w: 3, kw: ["cansad", "agotad", "estres", "ansios", "ansiedad", "triste", "sola", "solo en", "angust", "llorar", "no duermo", "duermo poco", "desanimad", "concentrarme"], support: "Conversación con el equipo de bienestar" },
+  tiempo:     { label: "Tiempo y trabajo", friendly: "el tiempo y el trabajo", w: 2, kw: ["turno", "horario", "no alcanzo", "tiempo", "llegue tarde", "llego tarde", "micro", "trabajo"], support: "Revisar opciones de horario o de jornada" },
+  vocacional: { label: "Vocacional", friendly: "tu carrera", w: 2, kw: ["no se si", "no me gusta", "cambiarme", "sentido", "para mi", "con la carrera"], support: "Conversación con un mentor u orientación vocacional" },
+  familia:    { label: "Salud o familia", friendly: "tu salud o tu familia", w: 2, kw: ["enferm", "hospital", "mama", "papa", "hermano", "hijo", "cuidar", "cuidando", "familia", "embaraz"], support: "Apoyo social de la fundación" },
+};
+const EXTRAS = {
+  intencion: { label: "Menciona dejar o congelar", w: 4, kw: ["congelar", "dejar la carrera", "retirarme", "abandonar", "no voy a seguir", "salirme"] },
+  ayuda:     { label: "Pide ayuda explícitamente", w: 2, kw: ["necesito ayuda", "me gustaria ver", "quiero hablar", "me gustaria hablar", "necesito", "ayudantia", "alguna ayuda"] },
+  empeora:   { label: "Empeora vs. semanas anteriores", w: 2 },
+  sinresp:   { label: "Por cada semana sin check-in", w: 1.5 },
+};
+const POS = /(me fue bien|aprobe|todo tranquilo|estoy bien|contento|contenta|feliz|me va bien)/;
+const NEG = /( no |pero|cuesta|dificil|complicad)/;
+const CRISIS = /(no quiero vivir|quitarme la vida|suicid|matarme|hacerme dano|autolesion|no aguanto mas|desaparecer para siempre)/;
+const AMP = /(mucho|muy|cada vez|demasiad|nada)/;
+
+function extractHeuristic(text) {
+  const sentences = text.split(/(?<=[.!?¿¡])\s+|\n+/).map(s => s.trim()).filter(Boolean);
+  const temas = [];
+  for (const [k, T] of Object.entries(THEMES)) {
+    let hits = 0, cita = "", amp = false;
+    for (const s of sentences) {
+      const n = " " + norm(s) + " ";
+      if (POS.test(n) && !NEG.test(n)) continue;
+      const h = T.kw.filter(w => n.includes(w)).length;
+      if (h) { hits += h; if (!cita) cita = s; if (AMP.test(n)) amp = true; }
+    }
+    if (hits) temas.push({ tema: k, intensidad: Math.min(3, (hits >= 2 ? 2 : 1) + (amp ? 1 : 0)), cita });
+  }
+  const n = " " + norm(text) + " ";
+  return {
+    temas, intencion_abandono: EXTRAS.intencion.kw.some(w => n.includes(w)), pide_ayuda: EXTRAS.ayuda.kw.some(w => n.includes(w)),
+    resumen: temas.length ? "Habla de " + temas.map(t => THEMES[t.tema].label.toLowerCase()).join(", ") + "." : "Semana sin dificultades relevantes.",
+    fuente: "simulado (palabras clave)",
+  };
+}
+async function extract(text) {
+  if (!useIA()) return extractHeuristic(text);
+  try {
+    const out = await askIA(
+      `Analizas el check-in semanal (transcrito de una nota de voz) de un estudiante becado de educación superior en Chile, para que su mentor/a de la fundación lo acompañe. NO diagnostiques ni predigas deserción: solo extrae lo que la persona dice. Temas permitidos: ${Object.keys(THEMES).join(", ")}. Responde SOLO con JSON: {"temas":[{"tema":"<clave>","intensidad":1-3,"cita":"<frase textual del estudiante>"}],"intencion_abandono":true|false,"pide_ayuda":true|false,"resumen":"<1 frase, lenguaje cálido y no estigmatizante>"}`,
+      [{ role: "user", content: text }]);
+    const j = parseJSON(out);
+    j.temas = (j.temas || []).filter(t => THEMES[t.tema]).map(t => ({ tema: t.tema, intensidad: Math.max(1, Math.min(3, +t.intensidad || 1)), cita: String(t.cita || "") }));
+    j.intencion_abandono = !!j.intencion_abandono; j.pide_ayuda = !!j.pide_ayuda; j.fuente = "Claude (" + CFG.model + ")";
+    return j;
+  } catch (e) { const h = extractHeuristic(text); h.fuente = "simulado (falló la IA: " + e.message + ")"; return h; }
+}
+function baseScore(sig) {
+  if (!sig) return 0;
+  return sig.temas.reduce((s, t) => s + THEMES[t.tema].w * t.intensidad, 0) + (sig.intencion_abandono ? EXTRAS.intencion.w : 0) + (sig.pide_ayuda ? EXTRAS.ayuda.w : 0);
+}
+function scoreStudent(st) {
+  const w = st.weeks, last = [...w].reverse().find(x => x && x.sig), idxLast = w.lastIndexOf(last);
+  let sinresp = 0; for (let i = w.length - 1; i >= 0 && !w[i]; i--) sinresp++;
+  const prev = w.slice(Math.max(0, idxLast - 3), idxLast).filter(Boolean).map(x => baseScore(x.sig));
+  const b = baseScore(last && last.sig), prevAvg = prev.length ? prev.reduce((a, c) => a + c, 0) / prev.length : b;
+  const empeora = b - prevAvg >= 2;
+  const parts = [];
+  if (last) last.sig.temas.forEach(t => parts.push({ s: `${THEMES[t.tema].label} (intensidad ${t.intensidad})`, p: THEMES[t.tema].w * t.intensidad }));
+  if (last && last.sig.intencion_abandono) parts.push({ s: EXTRAS.intencion.label, p: EXTRAS.intencion.w });
+  if (last && last.sig.pide_ayuda) parts.push({ s: EXTRAS.ayuda.label, p: EXTRAS.ayuda.w });
+  if (empeora) parts.push({ s: EXTRAS.empeora.label, p: EXTRAS.empeora.w });
+  if (sinresp) parts.push({ s: `${sinresp} semana(s) sin check-in`, p: sinresp * EXTRAS.sinresp.w });
+  const total = parts.reduce((s, x) => s + x.p, 0);
+  const crisis = !!(last && last.crisis && idxLast === w.length - 1);
+  const lvl = crisis ? "crisis" : total >= +$("thA").value ? "alta" : total >= +$("thM").value ? "media" : "baja";
+  return { total, parts, lvl, crisis, sinresp, empeora, last, series: w.map(x => x ? baseScore(x.sig) : null) };
+}
+const LVL = { crisis: "Atención inmediata", alta: "Alta", media: "Media", baja: "Baja" }, ORD = { crisis: 0, alta: 1, media: 2, baja: 3 };
+
+/* ---------- contexto oficial (data/ del repo del equipo) ---------- */
+const CTX = {
+  cita: "SIES, Ministerio de Educación — www.mifuturo.cl · Elaboración propia a partir de la base Matrícula Ed. Superior 2025 (MRUN) publicada en datosabiertos.mineduc.cl",
+  retencionTipo: { "Total educación superior": 77.9, "Universidades": 84.7, "Institutos Profesionales": 72.5, "Centros de Formación Técnica": 69.9 },
+  retencionIES: { "Pontificia Universidad Católica de Chile": 89.7, "IP Duoc UC": 78.0 },
+  origen: { "Particular pagado": 85.7, "Particular subvencionado": 80.1, "Público": 75.7 },
+  matricula: { total: 420276, duoc: 38752, duocVesp: 29.3, duocEdad20mas: 63.7, ucDiurna: 100 },
+};
+
+/* ---------- becados sintéticos (calibrados con las distribuciones del repo) ---------- */
+// Duoc UC: 29% vespertina, 64% con 20 años o más, áreas principales Tecnología, Administración y Salud.
+// UC: 100% diurna, 77% de 15 a 19 años. Los datos individuales son inventados; las proporciones no.
+const QUOTES = {
+  economico: ["No me alcanza la plata para el pasaje.", "Estoy buscando un segundo trabajo para pagar el arriendo.", "No sé si la beca cubre los materiales."],
+  academico: ["Reprobé la primera prueba de Química.", "Me estoy atrasando en Cálculo.", "No entiendo nada de Estadística."],
+  emocional: ["Me siento muy cansada últimamente.", "Estoy con mucho estrés y duermo poco.", "Me siento sola en la universidad."],
+  tiempo: ["Me cambiaron los turnos y no alcanzo a llegar.", "Paso tres horas al día en micro.", "No tengo tiempo para estudiar."],
+  vocacional: ["No sé si esta carrera es para mí.", "Estoy pensando en cambiarme de carrera.", "Me cuesta encontrarle sentido."],
+  familia: ["Mi mamá está enferma y la estoy cuidando.", "Tuve que hacerme cargo de mi hermano chico.", "Estuve enfermo toda la semana."],
+};
+const NAMES = ["Valentina S.", "Matías R.", "Javiera P.", "Benjamín A.", "Fernanda C.", "Tomás L.", "Constanza M.", "Joaquín V.", "Antonia F.", "Vicente G.", "Isidora N.", "Sebastián O.", "Francisca H.", "Nicolás T.", "Daniela Q.", "Kevin U.", "Yasna B.", "Jean-Pierre D.", "Mariana E.", "Brayan I."];
+const CARR_DUOC = ["Ing. en Informática", "Analista Programador", "Téc. en Administración", "Ing. en Administración", "Téc. en Enfermería"];
+const CARR_UC = ["Trabajo Social", "Ingeniería", "Pedagogía Básica"];
+const SEDES_DUOC = ["San Joaquín", "Maipú", "Puente Alto"];
+const MENTORES = ["Paula (mentora)", "Rodrigo (mentor)", "Equipo de bienestar"];
+const WEEKS = 6;
+function genWeeks(risk, pResp, prof) {
+  const out = [];
+  for (let wk = 0; wk < WEEKS; wk++) {
+    if (wk > 0 && rnd() > pResp) { out.push(null); continue; }
+    const temas = [];
+    prof.forEach((k, j) => {
+      const p = 0.15 + risk * (j === 0 ? 0.7 : 0.45) + (wk >= 3 ? risk * 0.15 : 0);
+      if (rnd() < p && !temas.some(t => t.tema === k)) temas.push({ tema: k, intensidad: Math.min(3, 1 + Math.floor(rnd() * (1 + 2.4 * risk))), cita: pick(QUOTES[k]) });
+    });
+    const intencion = risk > 0.75 && wk >= 4 && rnd() < 0.6;
+    if (intencion && !temas.some(t => t.tema === "vocacional")) temas.push({ tema: "vocacional", intensidad: 2, cita: "Estoy pensando en congelar." });
+    out.push({ sig: { temas, intencion_abandono: intencion, pide_ayuda: rnd() < 0.15 + risk * 0.35, resumen: "", fuente: "sintético" }, crisis: false, corregida: rnd() < 0.15 });
+  }
+  return out;
+}
+const students = NAMES.map((nombre, i) => {
+  const uc = i % 4 === 3;                                        // 25% UC, 75% Duoc UC
+  const jornada = uc ? "Diurna" : (rnd() < 0.29 ? "Vespertina" : "Diurna");
+  const keys = Object.keys(THEMES), prof = [pick(keys), pick(keys)];
+  const risk = Math.min(1, rnd() * 0.85 + (jornada === "Vespertina" ? 0.12 : 0) + (uc ? -0.05 : 0.03));
+  return {
+    id: "B" + String(i + 1).padStart(2, "0"), nombre, inst: uc ? "UC" : "Duoc UC",
+    carrera: uc ? pick(CARR_UC) : pick(CARR_DUOC), sede: uc ? "Campus San Joaquín" : pick(SEDES_DUOC), jornada,
+    comparte: rnd() < 0.85, dias: 2 + Math.floor(rnd() * 24), estado: "Abierto", responsable: "", proximo: "", log: [], nuevo: false,
+    weeks: genWeeks(risk, 0.72 + 0.25 * rnd(), prof),
+  };
+});
+// casos fijos para la conversación: uno sin responder hace 2 semanas
+students[6].weeks[4] = null; students[6].weeks[5] = null;
+// corrección de transcripciones algo más frecuente en un caso (acento distinto, p. ej. hablante de creole haitiano)
+students[17].weeks.forEach(w => { if (w) w.corregida = true; });
+
+/* ---------- casos de ejemplo para el check-in ---------- */
+const CASES = {
+  camila: { nombre: "Camila R.", inst: "Duoc UC", carrera: "Ing. en Informática", sede: "San Joaquín", jornada: "Vespertina",
+    text: "Hola, esta semana estuvo pesada. Me cambiaron los turnos en el supermercado y llegué tarde a dos clases de Cálculo. Siento que me estoy atrasando en el ramo y no alcanzo a estudiar. Me gustaría ver si hay otro horario o alguna ayudantía." },
+  diego: { nombre: "Diego M.", inst: "Duoc UC", carrera: "Téc. en Administración", sede: "Puente Alto", jornada: "Diurna",
+    text: "La verdad estoy complicado con la plata. Este mes no me alcanza para el pasaje ni para el arriendo, y estoy pensando en congelar el semestre para trabajar más. No sé si la beca cubre algo de esto. Necesito ayuda para ver opciones." },
+  ambar: { nombre: "Ámbar T.", inst: "UC", carrera: "Trabajo Social", sede: "Campus San Joaquín", jornada: "Diurna",
+    text: "Ha sido una semana difícil, me siento muy cansada y ansiosa, casi no duermo. Mi mamá está enferma y la estoy cuidando. Me cuesta concentrarme y estoy desanimada con la carrera." },
+  ambarC: { nombre: "Ámbar T.", inst: "UC", carrera: "Trabajo Social", sede: "Campus San Joaquín", jornada: "Diurna",
+    text: "Ha sido una semana muy difícil, me siento muy cansada y casi no duermo. Mi mamá está enferma y la estoy cuidando. Siento que ya no aguanto más, a veces pienso que no quiero vivir." },
+  joaquin: { nombre: "Joaquín P.", inst: "Duoc UC", carrera: "Analista Programador", sede: "Maipú", jornada: "Diurna",
+    text: "Me fue bien esta semana, aprobé el certamen de Programación y estoy estudiando con un grupo. Todo tranquilo por ahora." },
+};
+
+/* ---------- estado del check-in ---------- */
+const CK = { started: 0, seconds: 0, audioURL: null, recorder: null, chunks: [], timer: null, live: "", rec: null, original: "", transcript: "", modo: "", sig: null, crisis: false, result: null, studentId: null };
+const show = n => [0, 1, 2, 3, 4].forEach(i => $("st" + i).classList.toggle("hidden", i !== n));
+$("cTrans").onchange = () => $("go1").disabled = !$("cTrans").checked;
+$("go1").onclick = () => { $("cShare2").checked = $("cShare").checked; show(1); syncMode(); };
+function syncMode() {
+  const m = $("tMode").value;
+  $("caseSel").classList.toggle("hidden", m !== "sim");
+  $("liveWarn").classList.toggle("hidden", m !== "live");
+  $("recBox").classList.toggle("hidden", m === "text");
+  $("typed").classList.toggle("hidden", m !== "text");
+}
+$("tMode").onchange = syncMode;
+const fmt = s => Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+async function startRec() {
+  CK.chunks = []; CK.seconds = 0; CK.live = ""; $("timer").textContent = "0:00"; $("liveText").textContent = "";
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    CK.recorder = new MediaRecorder(stream);
+    CK.recorder.ondataavailable = e => e.data.size && CK.chunks.push(e.data);
+    CK.recorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      if (CK.audioURL) URL.revokeObjectURL(CK.audioURL);
+      CK.audioURL = URL.createObjectURL(new Blob(CK.chunks, { type: CK.recorder.mimeType || "audio/webm" }));
+      $("player").src = CK.audioURL; $("player").classList.remove("hidden");
+      $("recMsg").textContent = `Grabaste ${CK.seconds} s. Puedes escucharte antes de continuar.`;
+    };
+    CK.recorder.start(); $("recMsg").textContent = "Grabando… habla con calma.";
+  } catch (e) {
+    CK.recorder = null; $("recMsg").textContent = "No hay acceso al micrófono (ábrelo con python3 -m http.server). Usaremos un audio de ejemplo.";
+  }
+  if ($("tMode").value === "live") startLive();
+  $("recBtn").textContent = "■ Detener"; $("recBtn").classList.remove("rec");
+  CK.timer = setInterval(() => { CK.seconds++; $("timer").textContent = fmt(CK.seconds); if (CK.seconds >= 90) stopRec(); }, 1000);
+}
+function stopRec() {
+  clearInterval(CK.timer); CK.timer = null;
+  if (CK.recorder && CK.recorder.state !== "inactive") CK.recorder.stop();
+  else $("recMsg").textContent = `Audio de ejemplo listo (${CK.seconds} s).`;
+  if (CK.rec) { try { CK.rec.stop(); } catch (e) {} }
+  $("recBtn").textContent = "● Grabar de nuevo"; $("recBtn").classList.add("rec");
+}
+$("recBtn").onclick = () => CK.timer ? stopRec() : startRec();
+function startLive() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { $("liveText").textContent = "Este navegador no tiene transcripción en vivo. Usa “simulada” o “escribir”."; return; }
+  CK.rec = new SR(); CK.rec.lang = "es-CL"; CK.rec.continuous = true; CK.rec.interimResults = true;
+  CK.rec.onresult = e => { let fin = "", tmp = ""; for (const r of e.results) (r.isFinal ? (fin += r[0].transcript + " ") : (tmp += r[0].transcript)); CK.live = fin.trim(); $("liveText").textContent = (fin + tmp).trim(); };
+  CK.rec.onerror = e => $("liveText").textContent = "Transcripción en vivo no disponible (" + e.error + ").";
+  try { CK.rec.start(); } catch (e) {}
+}
+$("go2").onclick = async () => {
+  const m = $("tMode").value; let txt = "";
+  if (CK.timer) stopRec();
+  if (m === "text") txt = $("typed").value.trim();
+  else if (m === "live") txt = CK.live || $("liveText").textContent.trim();
+  else txt = CASES[$("caseSel").value].text;
+  if (txt.split(/\s+/).filter(Boolean).length < 5) { $("go2Msg").textContent = m === "text" ? "Escribe al menos unas palabras." : "No se captó texto. Graba de nuevo o elige otro modo."; return; }
+  $("go2Msg").textContent = m === "sim" ? "Transformando en texto (simulado: NVIDIA Parakeet/Canary en la versión real)…" : "Listo.";
+  await new Promise(r => setTimeout(r, m === "sim" ? 700 : 50));
+  CK.modo = { sim: "simulada (caso de ejemplo)", live: "navegador (Web Speech API, solo demo)", text: "escrita por el estudiante" }[m];
+  CK.original = txt; CK.duracion = m === "text" ? 0 : CK.seconds;
+  // el audio se borra apenas hay texto
+  if (CK.audioURL) { URL.revokeObjectURL(CK.audioURL); CK.audioURL = null; }
+  $("player").removeAttribute("src"); $("player").classList.add("hidden");
+  $("delMsg").textContent = m === "text" ? "" : "🗑️ Tu audio ya fue borrado. Solo queda este texto.";
+  $("transcript").value = txt; $("go2Msg").textContent = ""; show(2);
+};
+$("go3").onclick = async () => {
+  const txt = $("transcript").value.trim(); if (!txt) return;
+  CK.transcript = txt; CK.corregida = norm(txt) !== norm(CK.original);
+  CK.crisis = CRISIS.test(norm(txt));
+  $("go3Msg").textContent = useIA() ? "Analizando con IA…" : "";
+  CK.sig = await extract(txt); $("go3Msg").textContent = "";
+  const temas = CK.sig.temas;
+  $("understood").innerHTML = CK.crisis
+    ? `<div class="note bad"><b>Gracias por contarlo. Lo que sientes es importante.</b><br>Por tu seguridad, una persona del equipo de bienestar te va a contactar hoy. También puedes llamar ahora: <b>*4141</b> (prevención del suicidio) · Salud Responde <b>600 360 7777</b> <span class="muted">(verificar antes del evento)</span>.</div>`
+    : temas.length
+      ? `<p>Te escuchamos hablar de ${temas.map(t => `<span class="chip">${esc(THEMES[t.tema].friendly)}</span>`).join("")}</p>
+         <div class="note ok"><b>Apoyos que te podemos ofrecer:</b><ul style="margin:4px 0 0;padding-left:18px">${[...new Set(temas.map(t => THEMES[t.tema].support))].map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
+         ${CK.sig.intencion_abandono ? `<div class="note">Mencionas la idea de congelar o dejar. Antes de decidir, conversemos: hay alternativas (congelar con apoyo, cambio de jornada, becas).</div>` : ""}`
+      : `<div class="note ok">¡Qué bueno que vas bien! 💪 Si algo cambia, aquí estamos.</div>`;
+  $("understood").insertAdjacentHTML("beforeend", `<p class="muted">Análisis: ${esc(CK.sig.fuente)}${CK.corregida ? " · corregiste la transcripción ✔" : ""}</p>`);
+  show(3);
+};
+$("humanBtn").onclick = () => { $("humanCard").classList.remove("hidden"); $("humanCard").innerHTML = `<div class="note"><b>Hablar con una persona</b><br>Tu mentor/a: <b>mentoria.ficticia@ejemplo.cl</b> · Bienestar de tu sede · Si es urgente: *4141 / 600 360 7777 <span class="muted">(verificar)</span></div>`; };
+$("send").onclick = () => {
+  const c = CASES[$("caseSel").value] && $("tMode").value === "sim" ? CASES[$("caseSel").value] : { nombre: "Estudiante demo", inst: "Duoc UC", carrera: "Ing. en Informática", sede: "San Joaquín", jornada: "Vespertina" };
+  const comparte = $("cShare2").checked;
+  let st = students.find(s => s.nombre === c.nombre);
+  if (!st) {
+    st = { id: "N" + String(students.length + 1).padStart(2, "0"), nombre: c.nombre, inst: c.inst, carrera: c.carrera, sede: c.sede, jornada: c.jornada, comparte, dias: 9, estado: "Abierto", responsable: "", proximo: "", log: [], nuevo: true,
+      weeks: genWeeks(c.nombre.startsWith("Joaqu") ? 0.1 : 0.35, 0.95, Object.keys(THEMES).slice(0, 2)).slice(0, WEEKS - 1) };
+    students.push(st);
+  } else st.weeks = st.weeks.slice(0, WEEKS - 1);
+  st.comparte = comparte || CK.crisis; st.nuevo = true; st.protocoloCrisis = CK.crisis && !comparte;
+  st.weeks.push({ sig: CK.sig, crisis: CK.crisis, corregida: CK.corregida, texto: CK.transcript });
+  st.log.push({ t: "checkin", fecha: "Semana 6", txt: CK.crisis ? "Check-in con señal de crisis → protocolo" : "Check-in por " + (CK.modo.startsWith("escrita") ? "texto" : "voz") });
+  CK.result = { st, modo: CK.modo, duracion: CK.duracion, corregida: CK.corregida, sig: CK.sig, crisis: CK.crisis, comparte };
+  $("doneMsg").innerHTML = CK.crisis
+    ? `<div class="note bad">Una persona del equipo de bienestar te contactará hoy. Activamos el protocolo de cuidado${comparte ? "" : " aunque no elegiste compartir (excepción por tu seguridad, ver decisiones del equipo)"}.</div>`
+    : comparte ? `<p>Tu mentor/a verá tu resumen y te escribirá si hace falta. Tú decides qué pasa después.</p>` : `<p>Guardamos tu resumen solo para ti. No se compartió con la fundación.</p>`;
+  selected = st.id; renderAll(); show(4);
+};
+$("again").onclick = () => { show(1); $("timer").textContent = "0:00"; $("recMsg").textContent = "Si no hay micrófono, usamos un audio de ejemplo."; $("liveText").textContent = ""; };
+
+/* ---------- pestaña 2: por dentro ---------- */
+function renderWeights() {
+  $("wBody").innerHTML = Object.entries(THEMES).map(([k, T]) => `<tr><td>Tema: ${T.label}</td><td><input type="number" min="0" step="0.5" data-w="t:${k}" value="${T.w}" aria-label="Peso ${T.label}"></td><td class="muted">peso × intensidad (1–3)</td></tr>`).join("") +
+    Object.entries(EXTRAS).map(([k, E]) => `<tr><td>${E.label}</td><td><input type="number" min="0" step="0.5" data-w="e:${k}" value="${E.w}" aria-label="Peso ${E.label}"></td><td class="muted">${k === "sinresp" ? "peso × semanas" : "suma una vez"}</td></tr>`).join("");
+  $("wBody").querySelectorAll("input").forEach(inp => inp.oninput = () => { const [t, k] = inp.dataset.w.split(":"); (t === "t" ? THEMES : EXTRAS)[k].w = +inp.value || 0; renderAll(); });
+}
+$("thA").oninput = () => renderAll(); $("thM").oninput = () => renderAll();
+function renderPipe() {
+  const R = CK.result;
+  const steps = [["1 · Audio", R ? (R.duracion ? R.duracion + " s · borrado ✔" : "escrito") : "—", "done"], ["2 · NVIDIA ASR", R ? R.modo : "Parakeet / Canary", "nv"], ["3 · Baranda de crisis", R ? (R.crisis ? "⚠ crisis → persona" : "sin señales") : "—", R && R.crisis ? "hum" : "done"],
+    ["4 · Claude extrae", R ? R.sig.temas.length + " tema(s)" : "JSON de señales", "ai"], ["5 · Prioridad", R ? LVL[scoreStudent(R.st).lvl] + " · " + scoreStudent(R.st).total.toFixed(1) + " pts" : "reglas visibles", "done"],
+    ["6 · Cola fundación", R ? (R.st.comparte ? "posición " + (queue().findIndex(s => s.id === R.st.id) + 1) : "no compartido") : "—", "done"], ["7 · Validación humana", R ? (R.st.log.some(l => l.t === "dec") ? "validado ✔" : "pendiente") : "mentor/a", "hum"]];
+  $("pipe").innerHTML = steps.map(([t, d, c]) => `<div class="${R ? c : ""}"><b>${esc(t)}</b>${esc(d)}</div>`).join("");
+  if (!R) return;
+  const S = scoreStudent(R.st);
+  $("pipeDetail").innerHTML = `<div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div><h3>Texto analizado ${R.corregida ? '<span class="chip">corregido por el estudiante</span>' : ""}</h3><p class="q">“${esc(R.st.weeks[R.st.weeks.length - 1].texto)}”</p>
+    <h3>Puntaje (reglas visibles)</h3><table><thead><tr><th>Señal</th><th>Puntos</th></tr></thead><tbody>${S.parts.map(p => `<tr><td>${esc(p.s)}</td><td>${p.p.toFixed(1)}</td></tr>`).join("") || `<tr><td class="muted">Sin señales</td><td>0</td></tr>`}
+    <tr><td><b>Total</b></td><td><b>${S.total.toFixed(1)}</b> → <span class="lvl ${S.lvl}">${LVL[S.lvl]}</span></td></tr></tbody></table></div>
+    <div><h3>Lo que devolvió la extracción (${esc(R.sig.fuente)})</h3><pre>${esc(JSON.stringify({ temas: R.sig.temas, intencion_abandono: R.sig.intencion_abandono, pide_ayuda: R.sig.pide_ayuda, resumen: R.sig.resumen }, null, 2))}</pre>
+    <p class="muted">El LLM solo devuelve este JSON. No ve nombres, sede ni jornada, y no decide la prioridad.</p></div></div>`;
+}
+
+/* ---------- pestaña 3: fundación ---------- */
+let selected = null;
+const queue = () => students.filter(s => s.comparte).map(s => ({ ...s, S: scoreStudent(s) })).sort((a, b) => ORD[a.S.lvl] - ORD[b.S.lvl] || b.S.total - a.S.total);
+function spark(series) {
+  const w = 120, h = 28, max = Math.max(10, ...series.filter(x => x !== null)), step = w / (series.length - 1);
+  const pts = series.map((v, i) => v === null ? null : [i * step, h - 3 - (v / max) * (h - 6)]);
+  const segs = []; let cur = [];
+  pts.forEach(p => { if (p) cur.push(p.map(n => n.toFixed(1)).join(",")); else { if (cur.length) segs.push(cur); cur = []; } }); if (cur.length) segs.push(cur);
+  return `<svg width="${w}" height="${h}" role="img" aria-label="Puntaje semanal">${segs.map(sg => `<polyline fill="none" stroke="#d6336c" stroke-width="2.2" points="${sg.join(" ")}"/>`).join("")}${pts.map((p, i) => p ? `<circle cx="${p[0]}" cy="${p[1]}" r="2.2" fill="#1f2340"/>` : `<text x="${i * step}" y="${h - 2}" font-size="9" fill="#999" text-anchor="middle">·</text>`).join("")}</svg>`;
+}
+function why(s) {
+  const L = s.S.last; if (!L) return "Sin check-ins";
+  const top = [...L.sig.temas].sort((a, b) => THEMES[b.tema].w * b.intensidad - THEMES[a.tema].w * a.intensidad);
+  const chips = top.map(t => `<span class="chip">${esc(THEMES[t.tema].label)}</span>`).join("") + (L.sig.intencion_abandono ? `<span class="chip" style="border-color:#b42318;color:#b42318">menciona congelar</span>` : "") + (s.S.sinresp ? `<span class="chip">${s.S.sinresp} sem. sin check-in</span>` : "") + (s.S.empeora ? `<span class="chip">empeora</span>` : "");
+  const cita = top[0] ? `<div class="q">“${esc(top[0].cita)}”</div>` : `<div class="muted">Semana sin dificultades relevantes.</div>`;
+  return chips + cita;
+}
+function recommend(s) {
+  const S = s.S, L = S.last, acts = [];
+  if (S.crisis) return ["Contactar HOY por teléfono (bienestar + mentor/a).", "Activar el protocolo de crisis de la institución.", "No dejar el caso sin una persona responsable."];
+  if (L && L.sig.intencion_abandono) acts.push("Conversar esta semana, antes de que tome la decisión: revisar alternativas (congelar con apoyo, cambio de jornada, becas).");
+  if (L) [...new Set([...L.sig.temas].sort((a, b) => b.intensidad - a.intensidad).map(t => THEMES[t.tema].support))].slice(0, 2).forEach(x => acts.push(x + "."));
+  if (S.sinresp >= 2) acts.push("Contacto humano amable (llamada o WhatsApp): no responder no es una falta.");
+  if (!acts.length) acts.push("Sin acción necesaria: mantener el check-in semanal.");
+  return acts;
+}
+function renderQueue() {
+  const q = queue();
+  const pend = q.filter(s => !s.log.some(l => l.t === "dec")).length, altas = q.filter(s => s.S.lvl === "alta" || s.S.lvl === "crisis").length, sinr = q.filter(s => s.S.sinresp >= 2).length;
+  const allW = students.flatMap(s => s.weeks.filter(Boolean)), corr = allW.filter(w => w.corregida).length / (allW.length || 1);
+  $("kpis").innerHTML = `<div class="kpi p"><b>${altas}</b><span>prioridad alta o atención inmediata</span></div><div class="kpi"><b>${pend}</b><span>pendientes de validar por una persona</span></div><div class="kpi y"><b>${sinr}</b><span>2+ semanas sin check-in → contacto amable</span></div><div class="kpi"><b>${(corr * 100).toFixed(0)}%</b><span>transcripciones corregidas por el estudiante</span></div>`;
+  $("qBody").innerHTML = q.map(s => `<tr class="row ${selected === s.id ? "sel" : ""} ${s.nuevo ? "nuevo" : ""}" data-id="${s.id}" tabindex="0">
+    <td><span class="lvl ${s.S.lvl}">${LVL[s.S.lvl]}</span><br><span class="muted">${s.S.total.toFixed(1)} pts</span></td>
+    <td><b>${esc(s.nombre)}</b>${s.nuevo ? ' <span class="chip">nuevo</span>' : ""}${s.protocoloCrisis ? '<br><span class="muted">protocolo de crisis</span>' : ""}<br><span class="muted">último contacto hace ${s.dias} días</span></td>
+    <td>${esc(s.carrera)}<br><span class="muted">${esc(s.inst)} · ${esc(s.sede)} · ${esc(s.jornada)}</span></td>
+    <td style="max-width:300px">${why(s)}</td><td>${spark(s.S.series)}</td>
+    <td>${esc(s.estado)}${s.responsable ? `<br><span class="muted">${esc(s.responsable)}</span>` : ""}</td></tr>`).join("");
+  $("qBody").querySelectorAll("tr.row").forEach(tr => { tr.onclick = () => { selected = tr.dataset.id; renderAll(); $("ficha").scrollIntoView({ behavior: "smooth", block: "start" }); }; tr.onkeydown = e => { if (e.key === "Enter") tr.onclick(); }; });
+  const noComp = students.filter(s => !s.comparte).length;
+  $("qBody").insertAdjacentHTML("beforeend", `<tr><td colspan="6" class="muted">${noComp} becado(s) no comparten su check-in: no aparecen aquí y no reciben ninguna consecuencia.</td></tr>`);
+}
+function renderFicha() {
+  const s0 = students.find(x => x.id === selected);
+  if (!s0) { $("ficha").innerHTML = `<p class="muted">Selecciona un becado/a para ver su historial, la recomendación y validar.</p>`; return; }
+  const s = { ...s0, S: scoreStudent(s0) };
+  const tl = s.weeks.map((w, i) => w ? `<div class="ev ${w.crisis ? "cri" : ""}"><b>Semana ${i + 1}</b> · ${w.sig.temas.map(t => `<span class="chip">${esc(THEMES[t.tema].label)} ${"●".repeat(t.intensidad)}</span>`).join("") || '<span class="muted">sin dificultades</span>'}${w.corregida ? ' <span class="muted">(transcripción corregida)</span>' : ""}${w.sig.temas[0] ? `<div class="q">“${esc(w.texto || w.sig.temas[0].cita)}”</div>` : ""}</div>` : `<div class="ev miss"><b>Semana ${i + 1}</b> · <span class="muted">sin check-in</span></div>`).join("")
+    + s0.log.filter(l => l.t === "dec").map(l => `<div class="ev dec"><b>${esc(l.fecha)}</b> · ${esc(l.txt)}</div>`).join("");
+  $("ficha").innerHTML = `<h2>${esc(s.nombre)} · ${esc(s.carrera)} <span class="lvl ${s.S.lvl}">${LVL[s.S.lvl]}</span></h2>
+    <p class="muted">${esc(s.inst)} · ${esc(s.sede)} · ${esc(s.jornada)} · último contacto hace ${s.dias} días · estado: ${esc(s.estado)}</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div><h3>Seguimiento (6 semanas + decisiones)</h3><div class="tl">${tl}</div></div>
+      <div>
+        <h3>Por qué está en esta prioridad</h3>
+        <table><tbody>${s.S.parts.map(p => `<tr><td>${esc(p.s)}</td><td>${p.p.toFixed(1)}</td></tr>`).join("") || `<tr><td class="muted">Sin señales</td><td>0</td></tr>`}<tr><td><b>Total</b></td><td><b>${s.S.total.toFixed(1)}</b></td></tr></tbody></table>
+        <h3>Recomendación</h3>
+        <div class="note ia" id="recBox2"><b>Sugerencia ${useIA() ? "" : "(plantilla)"} · revisar antes de actuar</b><ul style="margin:4px 0 0;padding-left:18px">${recommend(s).map(a => `<li>${esc(a)}</li>`).join("")}</ul></div>
+        <button class="btn ghost sm" id="recIA">Redactar con IA</button> <span class="muted" id="recIAmsg"></span>
+        <h3>Validación humana</h3>
+        <fieldset><legend>La prioridad sugerida es: ${LVL[s.S.lvl]}</legend>
+          <label><input type="radio" name="vd" value="confirmar" checked> Confirmar</label>
+          <label><input type="radio" name="vd" value="ajustar"> Ajustar a <select id="vLvl"><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></label>
+          <label><input type="radio" name="vd" value="descartar"> No requiere seguimiento por ahora</label></fieldset>
+        <div class="flex"><label>Responsable <select id="vResp">${MENTORES.map(m => `<option ${s.responsable === m ? "selected" : ""}>${m}</option>`).join("")}</select></label>
+          <label>Próximo contacto <input type="date" id="vDate" value="${s.proximo || "2026-11-13"}"></label>
+          <label>Estado <select id="vEst">${["Abierto", "En seguimiento", "Cerrado"].map(e => `<option ${s.estado === e ? "selected" : ""}>${e}</option>`).join("")}</select></label></div>
+        <label for="vMot" style="display:block;margin-top:6px"><b>Motivo (obligatorio)</b></label><textarea id="vMot" placeholder="Ej.: llamé y conversamos; derivo a becas; agendamos reunión el jueves"></textarea>
+        <div class="flex" style="margin-top:6px"><button class="btn p" id="vOk" disabled>Validar y registrar</button><span class="muted" id="vMsg"></span></div>
+      </div></div>`;
+  $("vMot").oninput = () => $("vOk").disabled = !$("vMot").value.trim();
+  $("vOk").onclick = () => {
+    const d = document.querySelector("input[name=vd]:checked").value;
+    const txt = (d === "confirmar" ? `Prioridad ${LVL[s.S.lvl]} confirmada` : d === "ajustar" ? `Prioridad ajustada a ${LVL[$("vLvl").value]} (sugerida: ${LVL[s.S.lvl]})` : "Sin seguimiento por ahora") + ` · ${$("vResp").value} · próximo contacto ${$("vDate").value} · motivo: ${$("vMot").value.trim()}`;
+    Object.assign(s0, { responsable: $("vResp").value, proximo: $("vDate").value, estado: d === "descartar" ? "Cerrado" : $("vEst").value, dias: 0, nuevo: false });
+    s0.log.push({ t: "dec", fecha: "Hoy", txt });
+    renderAll(); $("vMsg").textContent = "✔ Registrado en el seguimiento.";
+  };
+  $("recIA").onclick = async () => {
+    if (!useIA()) { $("recIAmsg").textContent = "Activa “Claude (API)” arriba y pega una clave."; return; }
+    $("recIAmsg").textContent = "Redactando…";
+    try {
+      const L = s.S.last, resumen = L ? L.sig.temas.map(t => `${THEMES[t.tema].label} (intensidad ${t.intensidad}): "${t.cita}"`).join("; ") : "sin check-ins";
+      const out = await askIA("Eres apoyo para mentores de una fundación que acompaña a estudiantes becados de educación superior en Chile. Sugiere 2 o 3 acciones concretas y humanas para esta semana, en español de Chile, en viñetas cortas. No diagnostiques, no uses las palabras 'riesgo', 'desertor' ni 'fracaso'. La decisión final es del mentor/a.",
+        [{ role: "user", content: `Señales del último check-in: ${resumen}. Menciona congelar: ${L && L.sig.intencion_abandono ? "sí" : "no"}. Semanas sin check-in: ${s.S.sinresp}. Prioridad sugerida: ${LVL[s.S.lvl]}.` }]);
+      $("recBox2").innerHTML = `<b>Sugerencia redactada por IA (${esc(CFG.model)}) · revisar antes de actuar</b><div style="white-space:pre-wrap;margin-top:4px">${esc(out)}</div>`; $("recIAmsg").textContent = "";
+    } catch (e) { $("recIAmsg").textContent = "Error de IA: " + e.message; }
+  };
+}
+function renderAudit() {
+  const q = queue(), groups = { "Institución": s => s.inst, "Jornada": s => s.jornada, "Sede": s => s.sede };
+  $("audit").innerHTML = Object.entries(groups).map(([lab, f]) => {
+    const g = {}; q.forEach(s => { const k = f(s); g[k] ||= { n: 0, alta: 0 }; g[k].n++; if (s.S.lvl === "alta" || s.S.lvl === "crisis") g[k].alta++; });
+    return `<h3>${lab}</h3><table><thead><tr><th>Grupo</th><th>En la cola</th><th>Alta o inmediata</th></tr></thead><tbody>${Object.entries(g).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v.n}</td><td>${v.alta} (${(v.alta / v.n * 100).toFixed(0)}%)</td></tr>`).join("")}</tbody></table>`;
+  }).join("") + `<p class="muted">La prioridad no usa institución, sede ni jornada: solo lo que el estudiante cuenta. Esta tabla sirve para detectar si el sistema trata distinto a algún grupo. Con 20 casos ficticios, las diferencias son solo ilustrativas. Si un grupo corrige mucho más sus transcripciones, el modelo de voz podría estar entendiendo peor su acento.</p>`;
+}
+function renderCtx() {
+  const bar = (v, max = 100) => `<span style="display:inline-block;height:10px;width:${(v / max * 160).toFixed(0)}px;background:#1f2340;border-radius:5px;vertical-align:middle"></span>`;
+  $("ctx").innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+    <div><h3>Retención de 1er año · cohorte 2025</h3>${Object.entries(CTX.retencionTipo).map(([k, v]) => `<div class="flex" style="justify-content:space-between"><span>${k}</span><span>${bar(v)} <b>${v.toFixed(1).replace(".", ",")}%</b></span></div>`).join("")}
+      <p class="muted">≈ 22 de cada 100 estudiantes de 1er año no siguen en su institución al año siguiente.</p></div>
+    <div><h3>Las instituciones del desafío</h3>${Object.entries(CTX.retencionIES).map(([k, v]) => `<div class="flex" style="justify-content:space-between"><span>${k}</span><span>${bar(v)} <b>${v.toFixed(1).replace(".", ",")}%</b></span></div>`).join("")}
+      <h3>Según colegio de origen</h3>${Object.entries(CTX.origen).map(([k, v]) => `<div class="flex" style="justify-content:space-between"><span>${k}</span><span>${bar(v)} <b>${v.toFixed(1).replace(".", ",")}%</b></span></div>`).join("")}</div>
+    <div><h3>Matrícula de 1er año 2025</h3><p style="margin:0"><b>${CTX.matricula.total.toLocaleString("es-CL")}</b> estudiantes de pregrado; <b>${CTX.matricula.duoc.toLocaleString("es-CL")}</b> en IP Duoc UC.</p>
+      <p style="margin:6px 0 0">En Duoc UC, <b>${CTX.matricula.duocVesp.toString().replace(".", ",")}%</b> estudia en jornada vespertina y <b>${CTX.matricula.duocEdad20mas.toString().replace(".", ",")}%</b> tiene 20 años o más.</p>
+      <p class="muted">Los 20 becados ficticios de este prototipo siguen esas proporciones (75% Duoc UC, ~29% vespertina en Duoc UC). Sus historias son inventadas.</p></div></div>
+    <p class="muted" style="margin-top:8px"><b>Fuente:</b> ${esc(CTX.cita)}. <b>Nota:</b> no seguir en la misma institución no es idéntico a abandonar la educación superior (algunos persisten en otra institución).</p>`;
+}
+function renderAll() { renderQueue(); renderFicha(); renderAudit(); renderPipe(); }
+
+/* ---------- pestañas ---------- */
+function switchTab(t) { document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t)); ["est", "dentro", "fund"].forEach(x => $("tab-" + x).classList.toggle("hidden", x !== t)); }
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+
+/* ---------- decisiones del equipo ---------- */
+const QUESTIONS = [
+  { q: "¿Cada cuánto y por qué canal?", type: "radio", rec: 0, opts: ["Semanal por WhatsApp (nota de voz)", "Semanal en una app web", "Cada 2 semanas"] },
+  { q: "¿Qué preguntas guía usamos?", type: "radio", rec: 0, opts: ["¿Cómo te fue? · ¿Qué te costó? · ¿Necesitas algo?", "Pregunta abierta única", "Otras (anotar)"] },
+  { q: "¿Guardamos el audio?", type: "radio", rec: 0, opts: ["No: se borra al transcribir", "Sí, 7 días para revisión", "Sí, siempre"] },
+  { q: "¿Analizamos el tono de voz o emociones del audio?", type: "radio", rec: 0, opts: ["No, solo el contenido", "Sí, como señal adicional"] },
+  { q: "¿Cómo se calcula la prioridad?", type: "radio", rec: 0, opts: ["El LLM extrae señales y reglas visibles ordenan", "El LLM asigna la prioridad directamente", "Modelo estadístico entrenado"] },
+  { q: "¿Quién valida en la fundación?", type: "radio", rec: 0, opts: ["Mentor/a asignado/a", "Coordinación de la fundación", "Bienestar de la institución"] },
+  { q: "¿Qué hacemos si no responde?", type: "radio", rec: 0, opts: ["2 semanas → contacto humano amable", "Recordatorio automático y nada más", "Nada"] },
+  { q: "¿Señal de crisis si NO compartió?", type: "radio", rec: 0, opts: ["Se activa el protocolo igual (excepción por seguridad, explicada en el consentimiento)", "Solo se le muestran contactos de ayuda"] },
+  { q: "¿El estudiante ve y corrige su resumen?", type: "radio", rec: 0, opts: ["Sí, antes de enviar", "No"] },
+  { q: "Modelo de transcripción", type: "radio", rec: 0, opts: ["NVIDIA Parakeet (multilingüe)", "NVIDIA Canary", "Whisper local (plan B)", "Por definir con el compañero"] },
+  { q: "¿Qué usamos de los datos oficiales del repo?", type: "checkbox", rec: [0, 1], opts: ["Cifras de contexto para el pitch (retención SIES)", "Calibrar el dataset sintético", "Entrenar un modelo con la base MRUN (no tiene check-ins ni notas)"] },
+];
+const QKEY = "orquesta-p4-q", saved = JSON.parse(localStorage.getItem(QKEY) || "{}");
+$("questions").innerHTML = QUESTIONS.map((Q, qi) => `<fieldset data-q="${esc(Q.q)}"><legend>${esc(Q.q)}</legend>
+  ${Q.opts.map((o, oi) => { const rec = Array.isArray(Q.rec) ? Q.rec.includes(oi) : Q.rec === oi; return `<label><input type="${Q.type}" name="q${qi}" value="${esc(o)}" ${(saved[qi] || []).includes(o) ? "checked" : ""}> ${esc(o)}${rec ? '<span class="rec-s">sugerido</span>' : ""}</label>`; }).join("")}
+  <textarea placeholder="Notas del equipo" data-note="${qi}">${esc(saved["n" + qi] || "")}</textarea></fieldset>`).join("");
+$("questions").addEventListener("input", () => { const o = {}; QUESTIONS.forEach((Q, qi) => { o[qi] = [...document.querySelectorAll(`input[name=q${qi}]:checked`)].map(i => i.value); o["n" + qi] = document.querySelector(`[data-note="${qi}"]`).value; }); localStorage.setItem(QKEY, JSON.stringify(o)); });
+$("export").onclick = () => {
+  const lines = ["# Decisiones · Prototipo 4 (check-in por voz y seguimiento de la fundación)", `Fecha: ${new Date().toLocaleString("es-CL")}`, "",
+    `Pesos probados: ${Object.values(THEMES).map(T => `${T.label} ${T.w}`).join(" · ")} · ${Object.values(EXTRAS).map(E => `${E.label} ${E.w}`).join(" · ")} · umbrales Alta ≥ ${$("thA").value}, Media ≥ ${$("thM").value}`, ""];
+  document.querySelectorAll("#questions fieldset").forEach(fs => { const ch = [...fs.querySelectorAll("input:checked")].map(i => i.value), note = fs.querySelector("textarea").value.trim(); lines.push(`## ${fs.dataset.q}`, ch.length ? ch.map(c => "- " + c).join("\n") : "- (sin decidir)"); if (note) lines.push("> " + note); lines.push(""); });
+  const md = lines.join("\n"), a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([md], { type: "text/markdown" })); a.download = "decisiones-p4-checkin-voz.md"; a.click();
+  navigator.clipboard?.writeText(md).then(() => $("exportMsg").textContent = "✔ Descargado y copiado", () => $("exportMsg").textContent = "✔ Descargado");
+};
+
+renderWeights(); renderCtx(); renderAll(); syncMode();
+
+</script>
+</body>
+</html>
