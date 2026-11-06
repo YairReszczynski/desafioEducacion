@@ -4,6 +4,7 @@ import { PuenteLogo } from "@/components/brand/logo";
 import { InstallPWAPrompt } from "@/components/pwa/install-prompt";
 import { AlertBadge } from "@/components/ui/alert-badge";
 import { BackButton } from "@/components/ui/back-button";
+import { LoadMeter, loadColor } from "@/components/ui/load-meter";
 import { RoleBanner } from "@/components/ui/role-banner";
 import {
   publishLiveCheckIn,
@@ -460,23 +461,24 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
                     <p className="text-sm font-bold">{label}</p>
                     <p className="text-xs text-muted">{hint}</p>
                   </div>
-                  <span className="display text-2xl font-bold">
+                  <span
+                    className="display text-2xl font-bold"
+                    style={{ color: loadColor(pillars[key]) }}
+                  >
                     {pillars[key]}
                     <span className="text-xs font-bold text-muted"> /10</span>
                   </span>
                 </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={10}
+                <LoadMeter
+                  className="mt-2"
                   value={pillars[key]}
-                  onChange={(e) =>
+                  aria-label={label}
+                  onChange={(v) =>
                     setPillars((p) => ({
                       ...p,
-                      [key]: Number(e.target.value),
+                      [key]: v,
                     }))
                   }
-                  className="mt-2 w-full accent-[#9e1127]"
                 />
               </div>
             ))}
@@ -510,18 +512,25 @@ export function PerpetualLinkApp({ student }: { student: Student }) {
                   </p>
                 </div>
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wide text-muted">
-                    Energía hoy
-                  </label>
-                  <input
-                    type="range"
-                    min={1}
-                    max={10}
+                  <div className="flex items-end justify-between">
+                    <label className="text-xs font-bold uppercase tracking-wide text-muted">
+                      Energía hoy
+                    </label>
+                    <span
+                      className="display text-lg font-bold"
+                      style={{ color: loadColor(energy) }}
+                    >
+                      {energy}/10
+                    </span>
+                  </div>
+                  <LoadMeter
+                    className="mt-1"
                     value={energy}
-                    onChange={(e) => setEnergy(Number(e.target.value))}
-                    className="mt-2 w-full accent-[#d35c6d]"
+                    lowLabel="Baja"
+                    highLabel="Alta"
+                    aria-label="Energía hoy"
+                    onChange={setEnergy}
                   />
-                  <p className="display text-lg font-bold">{energy}/10</p>
                 </div>
               </div>
             </div>

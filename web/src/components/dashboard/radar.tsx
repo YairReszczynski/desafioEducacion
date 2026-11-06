@@ -3,6 +3,7 @@
 import { PuenteLogo } from "@/components/brand/logo";
 import { AlertBadge } from "@/components/ui/alert-badge";
 import { BackButton } from "@/components/ui/back-button";
+import { LoadMeter, loadColor } from "@/components/ui/load-meter";
 import { RoleBanner } from "@/components/ui/role-banner";
 import {
   clearAllLiveCheckIns,
@@ -467,7 +468,7 @@ export function DashboardRadar({ students: seed }: { students: Student[] }) {
 
             <div className="mt-4">
               <p className="mb-2 text-[11px] font-bold uppercase text-muted">
-                Carga auto-reportada (1 = muy cargado · 10 = estable)
+                Carga auto-reportada (rojo = cargado · verde = estable)
               </p>
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
                 {(
@@ -478,10 +479,26 @@ export function DashboardRadar({ students: seed }: { students: Student[] }) {
                   ] as const
                 ).map(([l, v]) => (
                   <div key={l} className="border border-line p-2">
-                    <p className="display text-xl font-bold">{v}/10</p>
+                    <p
+                      className="display text-xl font-bold"
+                      style={{ color: loadColor(v) }}
+                    >
+                      {v}/10
+                    </p>
                     <p className="text-muted">{l}</p>
+                    <LoadMeter
+                      className="mt-2"
+                      value={v}
+                      readOnly
+                      showEnds={false}
+                      aria-label={l}
+                    />
                   </div>
                 ))}
+              </div>
+              <div className="mt-2 flex justify-between text-[10px] font-semibold uppercase tracking-wide text-muted">
+                <span className="text-bad">Cargado</span>
+                <span className="text-ok">Estable</span>
               </div>
             </div>
 

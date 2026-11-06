@@ -11,8 +11,9 @@ Reglas éticas obligatorias:
 - No uses origen, género, sede ni jornada como factor de riesgo.
 - El alumno es dueño de su mensaje: el resumen debe ser transparente y editable.
 - Prioriza señales silenciosas reales: no responde WhatsApp, falta a reuniones, turnos laborales, núcleo familiar, carga académica.
-- Los 3 pilares de Puente: académico, psicológico/familiar, trabajo/económico.
-- alertLevel: baja | media | alta | crisis (crisis solo si hay intención de autolesión o peligro inmediato; en ese caso prioriza derivación humana).
+- Los 3 pilares de Puente: académico, psicológico/familiar, trabajo/económico (1 = muy cargado, 10 = estable).
+- alertLevel: baja | media | alta | crisis. crisis SOLO si hay intención de autolesión o peligro inmediato.
+- CRÍTICO alertLevel: los pilares pesan más que keywords del texto. Si los 3 pilares están en 8–10, NO uses "alta" (máximo "media" si el relato menciona fricción laboral). Si algún pilar está en 1–3, prioriza "alta".
 - Lenguaje cálido, concreto, en español chileno neutro/profesional.
 - CRÍTICO: Usa SIEMPRE el nombre de pila real del estudiante. NUNCA inventes otro nombre.
 - CRÍTICO: summaryForStudent, victory y headache van en SEGUNDA persona (tú/tu) hacia el alumno.
@@ -42,6 +43,78 @@ function normalizeAlertLevel(
   return fallback;
 }
 
+type AlertLevel = GlassBoxSummary["alertLevel"];
+
+/** Prioridad: pilares pesan más que keywords del texto. Crisis siempre gana. */
+export function resolveAlertLevel(payload: CheckInPayload): AlertLevel {
+  const raw = payload.transcript.trim();
+  const t = raw.toLowerCase();
+  if (isCrisisTranscript(t)) return "crisis";
+
+  const { academico, psicologico, trabajo } = payload.pillars;
+  const minP = Math.min(academico, psicologico, trabajo);
+  const avgP = (academico + psicologico + trabajo) / 3;
+
+  const labourText =
+    /turno|pega|metro|trabajo|vega|local|jornada|sobrecarga laboral|entregas/.test(
+      t
+    );
+  const family = /hermano|familia|casa|cuidar|mamá|papá|mama|papa/.test(t);
+  const money = /plata|pasaje|congelar|beca|dinero/.test(t);
+  const stress = /bola de nieve|no doy|atraso|sobrecarga|no alcanzo/.test(t);
+
+  // Termómetro en rojo → prioridad alta
+  if (minP <= 2 || psicologico <= 2) return "alta";
+  if (minP <= 4 && (labourText || money || stress || trabajo <= 4)) return "alta";
+  if (money && /congelar/.test(t) && minP <= 6) return "alta";
+
+  // Termómetro en verde (todo estable): el relato solo no dispara "alta"
+  if (minP >= 8 && avgP >= 8.5) {
+    if (money && /congelar/.test(t)) return "media";
+    if (labourText || stress) return "media";
+    return "baja";
+  }
+
+  if (minP >= 7) {
+    if (labourText || money || stress) return "media";
+    return "baja";
+  }
+
+  if (minP <= 5 || avgP <= 5.5) {
+    if (labourText || money || stress) return "alta";
+    return "media";
+  }
+
+  if (labourText || money || stress) return "media";
+  if (family) return "media";
+  return "baja";
+}
+
+/** Si Claude ignora los pilares, recalibra sin bajar una crisis. */
+export function calibrateAlertLevel(
+  fromModel: AlertLevel,
+  payload: CheckInPayload
+): AlertLevel {
+  if (fromModel === "crisis" || isCrisisTranscript(payload.transcript)) {
+    return "crisis";
+  }
+  const fromPillars = resolveAlertLevel(payload);
+  const order: AlertLevel[] = ["baja", "media", "alta", "crisis"];
+  // Con pilares muy estables, no dejar que el modelo fuerce "alta"
+  const minP = Math.min(
+    payload.pillars.academico,
+    payload.pillars.psicologico,
+    payload.pillars.trabajo
+  );
+  if (minP >= 8 && fromModel === "alta") return fromPillars;
+  // Con pilares muy cargados, subir si el modelo bajó de más
+  if (minP <= 3 && order.indexOf(fromModel) < order.indexOf("alta")) {
+    return "alta";
+  }
+  // Preferir la lectura combinada de pilares+texto
+  return fromPillars;
+}
+
 function mockSummary(payload: CheckInPayload): GlassBoxSummary {
   const name =
     payload.firstName?.trim() ||
@@ -55,14 +128,7 @@ function mockSummary(payload: CheckInPayload): GlassBoxSummary {
       t
     ) || payload.pillars.trabajo <= 4;
   const family = /hermano|familia|casa|cuidar|mamá|papá|mama|papa/.test(t);
-  const money = /plata|pasaje|congelar|beca|dinero/.test(t);
-  const level = crisis
-    ? ("crisis" as const)
-    : labour || money
-      ? ("alta" as const)
-      : family
-        ? ("media" as const)
-        : ("baja" as const);
+  const level = resolveAlertLevel(payload);
 
   const snippet = raw.length > 160 ? `${raw.slice(0, 157)}…` : raw;
 
@@ -87,6 +153,13 @@ function mockSummary(payload: CheckInPayload): GlassBoxSummary {
         "La IA no hace contención clínica: prioriza derivación humana. Sin sesgo por origen, género o jornada.",
     };
   }
+
+  const tutorBriefByLevel: Record<Exclude<AlertLevel, "crisis">, string> = {
+    alta: "Alerta de fricción logística (no de rendimiento). Pilares o relato indican sobrecarga. Contacto humano con cercanía.",
+    media:
+      "Atención puntual: hay señales en el relato o termómetro medio. Revisar con cercanía; no automatizar sanción.",
+    baja: "Seguimiento estándar. El alumno auto-reportó pilares estables; el relato se registra sin prioridad urgente.",
+  };
 
   return {
     summaryForStudent: `Esto es lo que escuché de tu semana, ${name}: «${snippet}». ¿Lo ves bien así o quieres ajustar algo antes de compartirlo?`,
@@ -114,10 +187,9 @@ function mockSummary(payload: CheckInPayload): GlassBoxSummary {
     silentSignals: labour
       ? ["sobrecarga_laboral", "sobrecarga_academica"]
       : ["checkin_atrasado"],
-    tutorBrief:
-      "Alerta de fricción logística (no de rendimiento). Punto de decisión humana: contactar con cercanía, sin vigilancia.",
+    tutorBrief: tutorBriefByLevel[level === "crisis" ? "alta" : level],
     ethicalNote:
-      "Auditoría ética: la alerta se basa en lo que el alumno eligió contar + pilares auto-reportados. Sin sesgo por origen, género o jornada.",
+      "Auditoría ética: la alerta combina lo que el alumno contó + el termómetro de 3 pilares. Sin sesgo por origen, género o jornada.",
   };
 }
 
@@ -205,11 +277,12 @@ Transcripción exacta (no inventes hechos fuera de esto):
       timeoutMs: 12_000,
     });
     const parsed = parseJsonLoose<GlassBoxSummary>(text);
-    const fallbackLevel = mockSummary(payload).alertLevel;
+    const fallbackLevel = resolveAlertLevel(payload);
+    const modelLevel = normalizeAlertLevel(parsed.alertLevel, fallbackLevel);
     const data = bindStudentName(
       {
         ...parsed,
-        alertLevel: normalizeAlertLevel(parsed.alertLevel, fallbackLevel),
+        alertLevel: calibrateAlertLevel(modelLevel, payload),
         pillarsTouched: Array.isArray(parsed.pillarsTouched)
           ? parsed.pillarsTouched
           : ["academico"],

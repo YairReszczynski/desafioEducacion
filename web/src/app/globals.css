@@ -153,3 +153,54 @@ body {
 .rise {
   animation: rise 0.45s ease both;
 }
+
+/* Medidor carga: track invisible; el degradé rojo→verde va detrás */
+.heat-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 1.75rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.heat-range:focus {
+  outline: none;
+}
+
+.heat-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px color-mix(in oklab, currentColor 35%, white);
+}
+
+.heat-range::-webkit-slider-runnable-track {
+  height: 0.625rem;
+  background: transparent;
+  border-radius: 2px;
+}
+
+.heat-range::-moz-range-track {
+  height: 0.625rem;
+  background: transparent;
+  border-radius: 2px;
+}
+
+.heat-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: -0.2rem;
+  border-radius: 999px;
+  background: currentColor;
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(28, 27, 26, 0.35);
+}
+
+.heat-range::-moz-range-thumb {
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 999px;
+  background: currentColor;
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(28, 27, 26, 0.35);
+}
